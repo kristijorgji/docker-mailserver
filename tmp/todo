@@ -1,0 +1,4 @@
+postfix configs
+    /etc/postfix/main.cf
+    /etc/postfix/master.cf
+    start service
