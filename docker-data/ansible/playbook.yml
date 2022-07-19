@@ -1,0 +1,72 @@
+---
+
+- hosts: localhost
+  vars:
+    files_path: "{{ playbook_dir }}/files"
+    templates_path: "{{ playbook_dir }}/templates"
+    rbuild_path: "ansible_tmp"
+  pre_tasks:
+    - name: alwyas
+      tags:
+        - always
+      block:
+        - name: "Include all .y(a)ml user specified vars in {{ user_configs_path }} and all nested directories"
+          ansible.builtin.include_vars:
+            dir: "{{ user_configs_path }}/vars"
+            extensions:
+              - 'yaml'
+              - 'yml'
+        - name: "ensure remote build folder exist"
+          file:
+            path: "{{ rbuild_path }}"
+            recurse: yes
+            state: directory
+
+    - name: "Apply postfix templates"
+      template:
+        src: "{{ item }}"
+        dest: "{{ item | replace(user_configs_path + '/postfix','/etc/postfix') | replace('.j2', '') }}"
+      with_fileglob:
+        - "{{ user_configs_path }}/postfix/*"
+    - name: "Apply dovecot templates"
+      template:
+        src: "{{ item.src }}"
+        dest: "{{ item.src | replace(user_configs_path + '/dovecot','/etc/dovecot') | replace('.j2', '') }}"
+      with_filetree: "{{ user_configs_path }}/dovecot/"
+      when: item.state == 'file'
+
+    - name: Ensure mysql has started
+      shell: 'service mysql start'
+    - name: Change the authentication plugin of MySQL root user to mysql_native_password
+      shell: mysql -u root -e 'UPDATE mysql.user SET plugin="mysql_native_password" WHERE user="root" AND host="localhost"'
+    - name: Flush Privileges
+      shell: mysql -u root -e 'FLUSH PRIVILEGES'
+    - name: Set MySQL root password
+      mysql_user:
+        login_host: 'localhost'
+        login_user: 'root'
+        login_password: ''
+        name: "{{ mysql_mailserver_user }}"
+        password: "{{ mysql_mailserver_password }}"
+        state: present
+
+    - name: db provision
+      tags:
+        - postfix-provision
+      block:
+      - name: Copy postfix-db.sql script
+        copy:
+          src: "{{ files_path }}/postfix-db.sql"
+          dest: "{{ rbuild_path }}/postfix-db.sql"
+      - name: Create postfix database and table schemas
+        shell: "mysql -u {{ mysql_mailserver_user }} -p{{ mysql_mailserver_password }} < {{ rbuild_path }}/postfix-db.sql"
+      - name: Create db data provision script from template
+        template:
+          src: "{{ templates_path }}/postfix-db-provision.sql.j2"
+          dest: "{{ rbuild_path }}/postfix-db-provision.sql"
+      - name: Provision postfix mail accounts
+        shell: "mysql -u {{ mysql_mailserver_user }} -p{{ mysql_mailserver_password }} < {{ rbuild_path }}/postfix-db-provision.sql"
+      - name: Remove account creds file
+        file:
+          path: "{{ rbuild_path }}/postfix-db-provision.sql"
+          state: absent

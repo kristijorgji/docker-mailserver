@@ -1,0 +1,13 @@
+---
+
+mail_server_cert_path: "/etc/letsencrypt/live/{{ mail_server_hostname }}/cert.pem"
+mail_server_pem_path: "/etc/letsencrypt/live/{{ mail_server_hostname }}/cert.pem"
+mail_server_key_path: "/etc/letsencrypt/live/{{ mail_server_hostname }}/privkey.pem"
+mail_server_chain_cert_path: "/etc/letsencrypt/live/{{ mail_server_hostname }}/fullchain.pem"
+mail_server_user: "vmail"
+mail_server_user_group: "vmail"
+mail_server_user_password: "$6$Kpcw3fR.654O7Xed$Zg05ft1e.XZ.dywhEQhEt8MagOZo1u9YPrgYp8icHHwgrf/9HwxDvjRL6t8BAemCxOBViZ/fdtUQ.D.YfNrsm."
+mail_server_relay_for:
+  - "127.0.0.0/8"
+  - "[::ffff:127.0.0.0]/104"
+  - "[::1]/128"

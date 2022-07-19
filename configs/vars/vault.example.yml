@@ -1,0 +1,20 @@
+---
+
+mail_server_mailee_hostname: "example.com"
+mail_server_hostname: "mail.example.com"
+
+mysql_root_password: "123456@"
+
+mysql_roundcube_database: "roundcubemail"
+mysql_roundcube_user: "roundcube"
+mysql_roundcube_password: "123456@"
+
+mysql_mailserver_database: "mailserver"
+mysql_mailserver_user: "root"
+mysql_mailserver_password: "123456@"
+
+mail_domains:
+  - { id: 1, name: "example.com" }
+
+mail_accounts:
+  - { id: 1, name: "me@example.com", password: "123456@" }

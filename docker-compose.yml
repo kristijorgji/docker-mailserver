@@ -1,0 +1,15 @@
+version: "3.7"
+
+services:
+  ms:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    volumes:
+      - ./docker-data:/dev-docker-data
+      - ./configs:/configs
+    env_file:
+      - ms.env
+    ports:
+      - "25:25"
+    container_name: ms
