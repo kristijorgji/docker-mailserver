@@ -1,0 +1,5 @@
+user = {{ mysql_mailserver_user }}
+password = {{ mysql_mailserver_password }}
+hosts = 127.0.0.1
+dbname = {{ mysql_mailserver_database }}
+query = SELECT destination FROM virtual_aliases WHERE source='%s'
