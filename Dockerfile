@@ -20,7 +20,7 @@ RUN apt-get install mysql-server -y
 RUN apt install python3-pip -y && python3 -m pip install PyMySQL
 
 # install dovecat and required tools
-RUN apt-get install dovecot-core dovecot-pop3d dovecot-imapd dovecot-common dovecot-lmtpd -y
+RUN apt-get install dovecot-core dovecot-pop3d dovecot-imapd dovecot-mysql dovecot-common dovecot-lmtpd -y
 
 # Use syslog-ng to get Postfix logs (rsyslog uses upstart which does not seem
 # to run within Docker).

@@ -13,11 +13,8 @@ message="A nice test"
     echo "mail from:<$from>"
     sleep 0.5
     echo "rcpt to:<$to>"
-    echo
-    echo "data"
     sleep 0.5
-    echo "ddd"
-    echo "mmm"
+    echo -e "data\nsubject: $subject\n$message\r\n."
 } | telnet localhost 25 |
     grep -q "Unknown user" &&
     echo "Invalid email" ||

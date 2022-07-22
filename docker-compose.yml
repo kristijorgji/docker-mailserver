@@ -13,4 +13,5 @@ services:
       - ms.env
     ports:
       - "25:25"
+      - "143:143"
     container_name: ms

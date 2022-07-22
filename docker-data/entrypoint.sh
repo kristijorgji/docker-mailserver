@@ -17,7 +17,9 @@ mkdir -p /var/mail/vhosts/$DOMAIN \
 ./gen-certificate.sh "$DOMAIN" "$PATH_SSL"
 
 # apply ansible configs
-ansible-playbook ansible/playbook.yml
+cd ansible
+ansible-playbook playbook.yml
+cd -
 
 # start up all necessary services
 service syslog-ng start
