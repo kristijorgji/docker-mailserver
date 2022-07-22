@@ -111,6 +111,8 @@
 #  SELECT username, domain, password \
 #  FROM users WHERE username = '%n' AND domain = '%d'
 
+password_query = SELECT email as user, password FROM virtual_users WHERE email='%u';
+
 # userdb query to retrieve the user information. It can return fields:
 #   uid - System UID (overrides mail_uid setting)
 #   gid - System GID (overrides mail_gid setting)

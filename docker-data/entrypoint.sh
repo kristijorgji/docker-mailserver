@@ -20,6 +20,7 @@ mkdir -p /var/mail/vhosts/$DOMAIN \
 ansible-playbook ansible/playbook.yml
 
 # start up all necessary services
+service syslog-ng start
 service postfix start
 service dovecot start;
 
