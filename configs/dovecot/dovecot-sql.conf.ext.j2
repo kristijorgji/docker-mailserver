@@ -1,3 +1,5 @@
+{{ ansible_managed | comment }}
+
 # This file is commonly accessed via passdb {} or userdb {} section in
 # conf.d/auth-sql.conf.ext
 
@@ -29,7 +31,7 @@
 # );
 
 # Database driver: mysql, pgsql, sqlite
-#driver =
+driver = mysql
 
 # Database connection string. This is driver-specific setting.
 #
@@ -71,14 +73,14 @@
 #   connect = host=sql.example.com dbname=virtual user=virtual password=blarg
 #   connect = /etc/dovecot/authdb.sqlite
 #
-#connect =
+connect = host=127.0.0.1 dbname={{ mysql_mailserver_database }} user={{ mysql_mailserver_user }} password={{ mysql_mailserver_password }}
 
 # Default password scheme.
 #
 # List of supported schemes is in
 # http://wiki2.dovecot.org/Authentication/PasswordSchemes
 #
-#default_pass_scheme = MD5
+default_pass_scheme = SHA512
 
 # passdb query to retrieve the password. It can return fields:
 #   password - The user's password. This field must be returned.

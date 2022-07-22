@@ -1,3 +1,5 @@
+{{ ansible_managed | comment }}
+
 ## Dovecot configuration file
 
 # If you're in a hurry, see http://wiki2.dovecot.org/QuickConfiguration
@@ -24,7 +26,7 @@
 !include_try /usr/share/dovecot/protocols.d/*.
 protocols = imap pop3 lmtp
 
-# A comma separated list of IPs or hosts where to listen in for connections. 
+# A comma separated list of IPs or hosts where to listen in for connections.
 # "*" listens in all IPv4 interfaces, "::" listens in all IPv6 interfaces.
 # If you want to specify non-default ports or anything more complex,
 # edit conf.d/master.conf.
@@ -49,7 +51,7 @@ protocols = imap pop3 lmtp
 #login_trusted_networks =
 
 # Space separated list of login access check sockets (e.g. tcpwrap)
-#login_access_sockets = 
+#login_access_sockets =
 
 # With proxy_maybe=yes if proxy destination matches any of these IPs, don't do
 # proxying. This isn't necessary normally, but may be useful if the destination
