@@ -70,3 +70,8 @@
         file:
           path: "{{ rbuild_path }}/postfix-db-provision.sql"
           state: absent
+
+    - name: restart postfix
+      service: name=postfix state=restarted
+    - name: restart dovecot
+      service: name=dovecot state=restarted

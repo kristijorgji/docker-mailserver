@@ -8,6 +8,7 @@ services:
     volumes:
       - ./docker-data:/dev-docker-data
       - ./configs:/configs
+      - ./mail:/var/mail
     env_file:
       - ms.env
     ports:
