@@ -9,9 +9,8 @@ services:
       - ./docker-data:/dev-docker-data
       - ./configs:/configs
       - ./mail:/var/mail
-    env_file:
-      - ms.env
     ports:
-      - "25:25"
-      - "143:143"
+      - "25:25"       # smtp
+      - "110:110"     # pop3
+      - "143:143"     # imap
     container_name: ms

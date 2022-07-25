@@ -1,5 +1,7 @@
 ---
 
+certbot_admin_email: me@example.com
+
 mail_server_mailee_hostname: "example.com"
 mail_server_hostname: "mail.example.com"
 

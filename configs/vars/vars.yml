@@ -1,5 +1,8 @@
 ---
 
+# comment this when deploying to production. It is used only during development as local
+env: local
+
 mail_server_cert_path: "/etc/letsencrypt/live/{{ mail_server_hostname }}/cert.pem"
 mail_server_pem_path: "/etc/letsencrypt/live/{{ mail_server_hostname }}/cert.pem"
 mail_server_key_path: "/etc/letsencrypt/live/{{ mail_server_hostname }}/privkey.pem"
