@@ -1,0 +1,27 @@
+name: Publish
+on:
+  push:
+    tags:
+      - '*'
+jobs:
+  publish:
+    if: ${{ startsWith(github.ref, 'refs/tags/v') }}
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.WORKFLOW_GIT_ACCESS_TOKEN }}
+      IMAGE_NAME: docker-mailserver
+      DOCKER_HUB_EMAIL: ${{ secrets.DOCKER_HUB_EMAIL }}
+      DOCKER_HUB_AUTH: ${{ secrets.DOCKER_HUB_AUTH }}
+
+    steps:
+      - name: Set env
+        run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          token: ${{ secrets.WORKFLOW_GIT_ACCESS_TOKEN }}
+          fetch-depth: 0
+
+      - name: Build docker image then push to the registry
+        run: |
+          "${GITHUB_WORKSPACE}/ci/push-to-docker.sh ${RELEASE_VERSION}"
