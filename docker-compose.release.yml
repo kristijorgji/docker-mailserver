@@ -2,13 +2,10 @@ version: "3.7"
 
 services:
   ms:
-    build:
-      context: .
-      dockerfile: ./Dockerfile
+    image: ${MAILSERVER_IMAGE}
     volumes:
-      - ./docker-data:/dev-docker-data
       - ./configs:/configs
-      - ./mail:/var/mail
+      - ./${MAILSERVER_MAILS_PATH}:/var/mail
     ports:
       - "25:25"       # smtp
       - "465:465"     # smtps
