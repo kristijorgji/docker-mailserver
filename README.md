@@ -1,22 +1,34 @@
 # docker-mailserver
 
-================
-!!! WORK IN PROGRESS !!!
-================
-
-Docker image that will provide out of the box mailserver using
+A docker image that will provide an out of the box mailserver using
 
 * postfix
 * dovecot
-* IMAP and POP so you can use mail clients like Thunderbolt with ease
-* roundcube UI to send and check the received emails
+* IMAP and POP with mysql driver so you can use mail clients like Thunderbird with ease
+* Multiple domains supported, you can have send or receive emails coming for both me@example.com and me@whatever.com
+* roundcube UI to send and check the received emails [WIP] 
 
 # How to use
 
-TODO COMING SOON the docker image after published
+First execute the following command to download and install the tool.
+You can change `docker-mailserver` in the third line with whatever path you want for the install
 
-The client of this project needs to change only the mounted `configs` folder where they have full control of postfix, dovecot templates they would like to change
-as well as all the vars passed
+```shell
+curl -LJO https://raw.githubusercontent.com/kristijorgji/docker-mailserver/main/install.sh \
+ && chmod a+x install.sh \
+ && ./install.sh docker-mailserver
+```
+
+After the installation you will see a message of what configurations you can make before starting the docker container of the mailserver
+
+You can modify those variables to your wishes, those involve things like
+* your mailserver domain name
+* your mailserver supported domains (can have more than one)
+* your mailserver users
+* etc
+
+If you want to make more changes to the configurations of postfix/dovecot or any tool, just modify the `jinja2` templates at configs folder after the tool installs the mailserver.
+
 
 Everything else is auto-generated during the start of the container including the self signed ssl certificates with the domain name provided
 The provisioning is done via ansible and jinja2 templates, that is why the configuration templates end in `.j2` extension

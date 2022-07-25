@@ -17,3 +17,5 @@ Thumbs.db
 ms.env
 configs/vars/vault.yml
 mail/
+# created by using the install script
+docker-mailserver/
