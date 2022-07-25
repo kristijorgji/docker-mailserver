@@ -22,6 +22,19 @@
             recurse: yes
             state: directory
 
+    - name: Create mailserver self-signed ssl cert
+      script: "{{ files_path }}/gen-certificate.sh {{ mail_server_hostname }} /etc/letsencrypt/live/{{ mail_server_hostname }}"
+      register: ssl_result
+      failed_when: ssl_result.rc < 0
+      changed_when: ssl_result.rc == 0
+      when: env == "local"
+      tags:
+        - certificates
+    - import_tasks: tasks/_letsencrypt-certbot.yml
+      when: env != "local"
+      tags:
+        - certificates
+
     - name: "Apply postfix templates"
       template:
         src: "{{ item }}"

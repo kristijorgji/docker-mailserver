@@ -1,0 +1,17 @@
+---
+
+- set_fact:
+    certs_domains:
+      - "{{ mail_server_hostname }}"
+
+- name: Call certbot to create certificates
+  script: "{{ files_path }}/create-letsencrypt-certificates.sh {{ certs_domains | join(' ') }}"
+  environment:
+    CERTBOT_ADMIN_EMAIL: "{{ certbot_admin_email }}"
+  register: res
+
+- name: "certbot result"
+  debug:
+    var: res
+  tags:
+    - debug

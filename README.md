@@ -25,6 +25,17 @@ The provisioning is done via ansible and jinja2 templates, that is why the confi
 
 Run `make ress` to create a docker image and log into one container created from the created image
 
-Then you can test with telnet and other tools if mailservice is working fine.
+Make sure that configs/vars/vars.yml `env` is set to `local`
+
+Afterward you can execute the boot provisioning by going to 
+`cd /dev-docker-data`
+
+then `bash entrypoint.sh`
+
+Or if you want only to execute the ansible provisioning, can do:
+```shell
+cd /dev-docker-data/ansible
+ansible-playbook playbook.yml
+```
 
 # [How to test and troubleshoot the setup](docs/how-to-test-and-troubleshot-the-setup.md)

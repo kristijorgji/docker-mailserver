@@ -22,9 +22,12 @@ RUN apt install python3-pip -y && python3 -m pip install PyMySQL
 # install dovecat and required tools
 RUN apt-get install dovecot-core dovecot-pop3d dovecot-imapd dovecot-mysql dovecot-common dovecot-lmtpd -y
 
+# install letsencrypt and certbot for the ssl certs
+RUN apt-get install certbot -y
+
 # Use syslog-ng to get Postfix logs (rsyslog uses upstart which does not seem
 # to run within Docker).
-run apt-get install -q -y syslog-ng
+RUN apt-get install -q -y syslog-ng
 
 # copy ansible provision codes
 #COPY ./docker-data /docker-data
