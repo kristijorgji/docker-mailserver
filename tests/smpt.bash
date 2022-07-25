@@ -3,8 +3,9 @@ mail_sender ()
 domain=kristijorgji.com
 from="test@test.com"
 to="me@kristijorgji.com"
-subject="Test $(date +'%F_%H_%M_%S')"
-message="A nice test"
+now=$(date +'%F_%H_%M_%S')
+subject="Test $now"
+message="A nice test $now"
 
 {
     sleep 1

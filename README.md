@@ -27,3 +27,4 @@ Run `make ress` to create a docker image and log into one container created from
 
 Then you can test with telnet and other tools if mailservice is working fine.
 
+# [How to test and troubleshoot the setup](docs/how-to-test-and-troubleshot-the-setup.md)
