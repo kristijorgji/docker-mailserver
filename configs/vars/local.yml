@@ -1,0 +1,5 @@
+---
+
+# the variables here are used only while developing locally this tool
+
+env: local
