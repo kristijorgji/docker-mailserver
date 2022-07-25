@@ -1,9 +1,0 @@
-di=tmp-ms
-docker build -t $di .
-
-docker run --rm -it \
-    --entrypoint /bin/bash \
-     $di
-
-# check open ports
- ss -lptn
