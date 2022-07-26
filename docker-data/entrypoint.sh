@@ -7,6 +7,10 @@ groupadd -g 5000 vmail  \
     && usermod -aG vmail postfix \
     && usermod -aG vmail dovecot
 
+mkdir -p /var/mail/vhosts \
+    && chown -R vmail:vmail /var/mail/vhosts \
+    && chmod -R 775 /var/mail/vhosts
+
 # apply ansible configs
 cd ansible
 ansible-playbook playbook.yml
