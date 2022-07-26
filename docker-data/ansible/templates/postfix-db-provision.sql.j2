@@ -1,6 +1,7 @@
 USE {{ mysql_mailserver_database }};
 
-INSERT INTO `mailserver`.`virtual_domains`
+DELETE FROM virtual_domains;
+INSERT INTO virtual_domains
   (`id` ,`name`)
 VALUES
 {% for mail_domain in mail_domains %}
@@ -10,12 +11,12 @@ ON DUPLICATE KEY UPDATE
   id = id,
   name = name;
 
-INSERT INTO `mailserver`.`virtual_users`
+DELETE FROM virtual_users;
+INSERT INTO virtual_users
   (`id`, `domain_id`, `password` , `email`)
 VALUES
 {% for mail_account in mail_accounts %}
   ({{ mail_account['id'] }}, '1', TO_BASE64(UNHEX(SHA2('{{ mail_account['password'] }}', 512))), '{{ mail_account['name'] }}'){% if not loop.last %},{% endif %}
-
 {% endfor %}
 ON DUPLICATE KEY UPDATE
     id = VALUES(id),

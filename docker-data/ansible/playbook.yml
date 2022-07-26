@@ -6,7 +6,7 @@
     templates_path: "{{ playbook_dir }}/templates"
     rbuild_path: "ansible_tmp"
   pre_tasks:
-    - name: alwyas
+    - name: always
       tags:
         - always
       block:
@@ -68,8 +68,8 @@
         - postfix-provision
       block:
       - name: Copy postfix-db.sql script
-        copy:
-          src: "{{ files_path }}/postfix-db.sql"
+        template:
+          src: "{{ templates_path }}/postfix-db.sql.j2"
           dest: "{{ rbuild_path }}/postfix-db.sql"
       - name: Create postfix database and table schemas
         shell: "mysql -u {{ mysql_mailserver_user }} -p{{ mysql_mailserver_password }} < {{ rbuild_path }}/postfix-db.sql"
@@ -86,5 +86,9 @@
 
     - name: restart postfix
       service: name=postfix state=restarted
+      tags:
+        - reload
     - name: restart dovecot
       service: name=dovecot state=restarted
+      tags:
+        - reload

@@ -10,9 +10,10 @@
 1. [About](#about)
 2. [Requirements](#requirements)
 3. [How to use](#how-to-use)
-4. [How to connect via a mail client (Thunderbird)](docs/thunderbird/how-to-connect-with-thunderbird.md)
-5. [How to develop locally](#how-to-develop-locally)
-6. [How to test and troubleshoot the setup](docs/how-to-test-and-troubleshot-the-setup.md)
+4. [How to update domains and users on fly](#how-to-update-domains-and-users-on-the-fly)
+5. [How to connect via a mail client (Thunderbird)](docs/thunderbird/how-to-connect-with-thunderbird.md)
+6. [How to develop locally](#how-to-develop-locally)
+7. [How to test and troubleshoot the setup](docs/how-to-test-and-troubleshot-the-setup.md)
 
 # About
 
@@ -82,6 +83,17 @@ If you want to make more changes to the configurations of postfix/dovecot or any
 
 Everything else is auto-generated during the start of the container including the self signed ssl certificates with the domain name provided
 The provisioning is done via ansible and jinja2 templates, that is why the configuration templates end in `.j2` extension
+
+# How to update domains and users on the fly
+
+First change the configuration at `configs/vars/vault.yml` which contains your email accounts and domains.
+
+Afterward from the root of this project run
+```shell
+. update.sh
+```
+
+That is all.
 
 # How to develop locally
 
