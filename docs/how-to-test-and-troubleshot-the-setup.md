@@ -23,6 +23,15 @@ doveadm quota get -u me@kristijorgji.com
 doveadm fetch -u me@kristijorgji.com "text" ALL
 ```
 
+## Checking the postfix-dovecot mysql data
+
+```shell
+password=supersecret
+mysql -u root -p$password -e "select * from mailserver.virtual_domains"
+mysql -u root -p$password -e "select * from mailserver.virtual_users"
+mysql -u root -p$password -e "select * from mailserver.virtual_aliases"
+```
+
 ## Troubleshooting
 
 To see only postfix non default config values

@@ -7,6 +7,7 @@ VALUES
 {% for mail_domain in mail_domains %}
   ({{ mail_domain['id'] }}, '{{ mail_domain['name'] }}'){% if not loop.last %},{% endif %}
 {% endfor %}
+
 ON DUPLICATE KEY UPDATE
   id = id,
   name = name;
@@ -18,8 +19,19 @@ VALUES
 {% for mail_account in mail_accounts %}
   ({{ mail_account['id'] }}, '1', TO_BASE64(UNHEX(SHA2('{{ mail_account['password'] }}', 512))), '{{ mail_account['name'] }}'){% if not loop.last %},{% endif %}
 {% endfor %}
+
 ON DUPLICATE KEY UPDATE
     id = VALUES(id),
     domain_id = VALUES(domain_id),
     password = VALUES(password),
-    email = VALUES(email)
+    email = VALUES(email);
+
+DELETE FROM virtual_aliases;
+{% if mail_virtual_aliases is defined %}
+INSERT INTO virtual_aliases
+  (`id`, `domain_id`, `source`, `destination`)
+VALUES
+{% for mva in mail_virtual_aliases %}
+  ({{ mva['id'] }}, {{ mva['domainId'] }}, '{{ mva['source'] }}', '{{ mva['destination'] }}'){% if not loop.last %},{% endif %}
+{% endfor %}
+{% endif %}
