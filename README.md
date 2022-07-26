@@ -10,8 +10,9 @@
 1. [About](#about)
 2. [Requirements](#requirements)
 3. [How to use](#how-to-use)
-4. [How to develop locally](#how-to-develop-locally)
-5. [How to test and troubleshoot the setup](docs/how-to-test-and-troubleshot-the-setup.md)
+4. [How to connect via a mail client (Thunderbird)](docs/thunderbird/how-to-connect-with-thunderbird.md)
+5. [How to develop locally](#how-to-develop-locally)
+6. [How to test and troubleshoot the setup](docs/how-to-test-and-troubleshot-the-setup.md)
 
 # About
 
@@ -35,7 +36,7 @@ A docker image that will provide an out of the box mailserver using
 - Your _mailserver domain_ **A record (or cname)** points to the machine where  this docker mailserver will run.
   - ![CNAME Mailserver Domain Record Namescheap Example](./docs/maildomain-cname-example.png)
 - Your webserver is configured to listen for your _mailserver domain_ port 80, so letsencrypt can generate and renew the ssl certificate
-- You need to expose the required ports through your security groups/firewall in order to connect to the mailserver.  
+- You need to expose the ports that you will use through your security group or firewall. Port 465 and 143 must be available, the rest are optional only if you use them
   - 25     # smtp
   - 465    # smtps
   - 110    # pop3
