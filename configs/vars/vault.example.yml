@@ -20,3 +20,8 @@ mail_domains:
 
 mail_accounts:
   - { id: 1, name: "me@example.com", password: "123456@" }
+  - { id: 2, name: "myfriend@example.com", password: "123456@" }
+
+# if you enable the variable below emails targeting myfriend@example.com will go to me@example.com and myfriend receives nothing
+#mail_virtual_aliases:
+#  - { id: 1, domainId: 1, source: "myfriend@example.com", destination: "me@example.com" }
