@@ -1,5 +1,5 @@
-CREATE DATABASE IF NOT EXISTS mailserver;
-USE mailserver;
+CREATE DATABASE IF NOT EXISTS {{ mysql_mailserver_database }};
+USE {{ mysql_mailserver_database }};
 
 CREATE TABLE IF NOT EXISTS `virtual_domains` (
   `id` int(11) NOT NULL auto_increment,
