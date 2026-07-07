@@ -25,3 +25,12 @@ CREATE TABLE IF NOT EXISTS `virtual_aliases` (
   PRIMARY KEY (`id`),
   FOREIGN KEY (domain_id) REFERENCES virtual_domains(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `virtual_transports` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `domain_id` int(11) NOT NULL,
+  `email` varchar(100) NOT NULL,
+  `transport` varchar(100) NOT NULL,
+  PRIMARY KEY (`id`),
+  FOREIGN KEY (domain_id) REFERENCES virtual_domains(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;

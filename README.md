@@ -10,8 +10,10 @@
 1. [About](#about)
 2. [Requirements](#requirements)
 3. [How to use](#how-to-use)
-   1. [How to update domains and users on fly](#how-to-update-domains-and-users-on-the-fly)
-   2. [How to setup email aliases](#setting-up-aliases)
+  1. [How to update domains and users on fly](#how-to-update-domains-and-users-on-the-fly)
+  2. [How to setup email aliases](#setting-up-aliases)
+  3. [Noreply / discard transports](#noreply--discard-transports)
+  4. [SendGrid outbound relay](#sendgrid-outbound-relay)
 4. [How to connect via a mail client (Thunderbird)](docs/thunderbird/how-to-connect-with-thunderbird.md)
 5. [How to develop locally](#how-to-develop-locally)
 6. [How to test and troubleshoot the setup](docs/how-to-test-and-troubleshot-the-setup.md)
@@ -20,24 +22,26 @@
 
 A docker image that will provide an out of the box mailserver using
 
-* postfix
-* dovecot
-* IMAP and POP with mysql driver so you can use mail clients like Thunderbird with ease
-* Multiple domains supported, you can have send or receive emails coming for both me@example.com and me@whatever.com
-* roundcube UI to send and check the received emails [WIP] 
+- postfix
+- dovecot
+- IMAP and POP with mysql driver so you can use mail clients like Thunderbird with ease
+- Multiple domains supported, you can have send or receive emails coming for both [me@example.com](mailto:me@example.com) and [me@whatever.com](mailto:me@whatever.com)
+- roundcube UI to send and check the received emails [WIP]
 
 # Requirements
 
 **Tools**
+
 - [Docker](https://www.docker.com/) installed
 - [Docker compose](https://docs.docker.com/compose/) installed
 
 **Prerequisites** 
+
 - Your **mx record** points to the machine where you will use this docker mailserver will run
-  - ![MX Record Namescheap Example](./docs/mx-record-example.png)
-- Your _mailserver domain_ **A record (or cname)** points to the machine where  this docker mailserver will run.
-  - ![CNAME Mailserver Domain Record Namescheap Example](./docs/maildomain-cname-example.png)
-- Your webserver is configured to listen for your _mailserver domain_ port 80, so letsencrypt can generate and renew the ssl certificate
+  - MX Record Namescheap Example
+- Your *mailserver domain* **A record (or cname)** points to the machine where  this docker mailserver will run.
+  - CNAME Mailserver Domain Record Namescheap Example
+- Your webserver is configured to listen for your *mailserver domain* port 80, so letsencrypt can generate and renew the ssl certificate
 - You need to expose the ports that you will use through your security group or firewall. Port 465 and 143 must be available, the rest are optional only if you use them
   - 25     # smtp
   - 465    # smtps
@@ -74,36 +78,39 @@ curl -LJO https://raw.githubusercontent.com/kristijorgji/docker-mailserver/main/
 After the installation you will see a message of what configurations you can make before starting the docker container of the mailserver
 
 You can modify those variables to your wishes, those involve things like
-* your mailserver domain name
-* your mailserver supported domains (can have more than one)
-* your mailserver users
-* etc
+
+- your mailserver domain name
+- your mailserver supported domains (can have more than one)
+- your mailserver users
+- etc
 
 If you want to make more changes to the configurations of postfix/dovecot or any tool, just modify the `jinja2` templates at configs folder after the tool installs the mailserver.
-
 
 Everything else is auto-generated during the start of the container including the self signed ssl certificates with the domain name provided
 The provisioning is done via ansible and jinja2 templates, that is why the configuration templates end in `.j2` extension
 
 ## How to update domains and users on the fly
 
-First change the configuration at `configs/vars/vault.yml` which contains your email accounts and domains.
+Edit `configs/vars/vault.yml` (`mail_domains`, `mail_accounts`, and related keys).
 
-Afterward from the root of this project run
+From the project root run:
+
 ```shell
-. update.sh
+./update.sh
 ```
 
-That is all.
+`update.sh` applies vault data to MySQL (`db-provision`), renders Postfix/Dovecot templates, and reloads services. Requires **v0.0.5** or later (earlier tags ran `postfix-provision` only and did not sync the database).
 
 ## Setting up aliases
-Example: All emails targeting myfriend@example.com should be received only by me@example.com
 
-NOTE: myfriend@example.com will not receive anything in this setup.
+Example: All emails targeting [myfriend@example.com](mailto:myfriend@example.com) should be received only by [me@example.com](mailto:me@example.com)
+
+NOTE: [myfriend@example.com](mailto:myfriend@example.com) will not receive anything in this setup.
 
 This is very easy to setup.
 
 Change configs/vars/vault.yml `mail_virtual_aliases` variable and list the alias there like below:
+
 ```yaml
 mail_virtual_aliases:
   - { id: 1, domainId: 1, source: "myfriend@example.com", destination: "me@example.com" }
@@ -111,9 +118,84 @@ mail_virtual_aliases:
 
 PS: The domainId will be the id of the domain you use, but technically it does not matter much redirect will even work across domains for same mailserver
 
-Finally run the update script
+Finally run:
+
 ```shell
-. update.sh
+./update.sh
+```
+
+## Noreply / discard transports
+
+Use `mail_virtual_transports` for addresses that should accept inbound mail and silently discard it (typical for `noreply@` used only as a From address via an external provider).
+
+Example — blackhole `noreply@example.com` without creating a mailbox:
+
+```yaml
+mail_virtual_transports:
+  - { id: 1, domainId: 1, email: "noreply@example.com", transport: discard }
+```
+
+After changing `vault.yml`, run:
+
+```shell
+./update.sh
+```
+
+Verify transport lookup:
+
+```shell
+docker-compose exec ms postmap -q mysql:/etc/postfix/mysql-virtual-transports.cf noreply@example.com
+# Expected: discard
+```
+
+Functional test:
+
+```shell
+echo "This should vanish" | mail -s "Blackhole Test" noreply@example.com
+docker-compose exec ms tail /var/log/mail.log
+# Expect: postfix/discard ... relay=none
+```
+
+## SendGrid outbound relay
+
+Outbound mail from selected senders can relay through SendGrid using Postfix `sender_dependent_relayhost_maps` (not a global `relayhost`). Multiple SendGrid accounts are supported: each named profile in `configs/vars/vars.yml` references an API key in `sendgrid_relay_api_keys` via `api_key_ref`.
+
+Example in `configs/vars/vault.yml`:
+
+```yaml
+sendgrid_relay_api_keys:
+  example_com: "SG...."
+  other_com: "SG...."
+mail_sender_relays:
+  - { source: "support@example.com", profile: sendgrid_example }
+  - { source: "@other.com", profile: sendgrid_other }   # optional per-domain default
+```
+
+Profiles are defined in `configs/vars/vars.yml`:
+
+```yaml
+mail_relay_profiles:
+  sendgrid_example:
+    host: "[smtp.sendgrid.net]:587"
+    sasl_user: apikey
+    api_key_ref: example_com
+  sendgrid_other:
+    host: "[smtp.sendgrid.net]:587"
+    sasl_user: apikey
+    api_key_ref: other_com
+```
+
+Verify after provision:
+
+```shell
+docker-compose exec ms postmap -q "support@example.com" hash:/etc/postfix/sasl_passwd
+docker-compose exec ms postmap -q "support@example.com" hash:/etc/postfix/sender_dependent_relayhost
+```
+
+After changing relay settings, run:
+
+```shell
+./update.sh
 ```
 
 # How to develop locally
@@ -126,9 +208,11 @@ Afterward you can execute the boot provisioning by going to
 then `bash entrypoint.sh`
 
 Or if you want only to execute the ansible provisioning, can do:
+
 ```shell
 cd /dev-docker-data/ansible
 ansible-playbook playbook.yml
 ```
 
 # [How to test and troubleshoot the setup](docs/how-to-test-and-troubleshot-the-setup.md)
+
