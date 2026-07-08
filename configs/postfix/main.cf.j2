@@ -23,7 +23,11 @@ smtpd_tls_cert_file={{ mail_server_cert_path }}
 smtpd_tls_key_file={{ mail_server_key_path }}
 smtpd_use_tls=yes
 smtpd_tls_auth_only = yes
+{% if mail_sender_relays is defined and mail_sender_relays | length > 0 %}
+smtp_tls_security_level = encrypt
+{% else %}
 smtp_tls_security_level = may
+{% endif %}
 smtpd_tls_security_level = may
 smtpd_sasl_security_options = noanonymous, noplaintext
 smtpd_sasl_tls_security_options = noanonymous
@@ -69,6 +73,16 @@ mydomain = {{ mail_server_mailee_hostname }}
 myorigin = $mydomain
 mydestination = localhost
 relayhost =
+{% if mail_sender_relays is defined and mail_sender_relays | length > 0 %}
+# Sender-dependent outbound relay (e.g. SendGrid for selected mailboxes/domains)
+sender_dependent_relayhost_maps = hash:/etc/postfix/sender_dependent_relayhost
+smtp_sender_dependent_authentication = yes
+smtp_sasl_auth_enable = yes
+smtp_sasl_password_maps = hash:/etc/postfix/sasl_passwd
+smtp_sasl_security_options = noanonymous
+smtp_sasl_tls_security_options = noanonymous
+header_size_limit = 4096000
+{% endif %}
 mynetworks = {{ mail_server_relay_for|join(" ") }}
 mailbox_size_limit = 0
 recipient_delimiter = +
@@ -83,6 +97,8 @@ virtual_mailbox_domains = mysql:/etc/postfix/mysql-virtual-mailbox-domains.cf
 virtual_mailbox_maps = mysql:/etc/postfix/mysql-virtual-mailbox-maps.cf
 virtual_alias_maps = mysql:/etc/postfix/mysql-virtual-alias-maps.cf,
         mysql:/etc/postfix/mysql-virtual-email2email.cf
+# Per-address transports (e.g. noreply → discard blackhole)
+transport_maps = mysql:/etc/postfix/mysql-virtual-transports.cf
 
 # Even more Restrictions and MTA params
 disable_vrfy_command = yes

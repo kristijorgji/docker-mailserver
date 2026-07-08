@@ -34,4 +34,14 @@ VALUES
 {% for mva in mail_virtual_aliases %}
   ({{ mva['id'] }}, {{ mva['domainId'] }}, '{{ mva['source'] }}', '{{ mva['destination'] }}'){% if not loop.last %},{% endif %}
 {% endfor %}
-{% endif %}
+{% endif %};
+
+DELETE FROM virtual_transports;
+{% if mail_virtual_transports is defined %}
+INSERT INTO virtual_transports
+  (`id`, `domain_id`, `email` , `transport`)
+VALUES
+{% for mvt in mail_virtual_transports %}
+  ({{ mvt['id'] }}, {{ mvt['domainId'] }}, '{{ mvt['email'] }}', '{{ mvt['transport'] }}'){% if not loop.last %},{% endif %}
+{% endfor %}
+{% endif %};

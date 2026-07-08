@@ -39,8 +39,23 @@
       template:
         src: "{{ item }}"
         dest: "{{ item | replace(user_configs_path + '/postfix','/etc/postfix') | replace('.j2', '') }}"
+        mode: "{{ '0600' if item.endswith('sasl_passwd.j2') else omit }}"
       with_fileglob:
         - "{{ user_configs_path }}/postfix/*"
+      tags:
+        - postfix-provision
+        - reload
+
+    - name: Build postfix sender-dependent relay maps
+      when: mail_sender_relays is defined and mail_sender_relays | length > 0
+      block:
+        - name: postmap sender_dependent_relayhost
+          command: postmap /etc/postfix/sender_dependent_relayhost
+        - name: postmap sasl_passwd
+          command: postmap /etc/postfix/sasl_passwd
+      tags:
+        - postfix-provision
+        - reload
     - name: "Apply dovecot templates"
       template:
         src: "{{ item.src }}"
@@ -50,6 +65,8 @@
 
     - name: Ensure mysql has started
       shell: 'service mysql start'
+      tags:
+        - db-provision
     - name: Change the authentication plugin of MySQL root user to mysql_native_password
       shell: mysql -u root -e 'UPDATE mysql.user SET plugin="mysql_native_password" WHERE user="root" AND host="localhost"'
     - name: Flush Privileges
@@ -65,7 +82,7 @@
 
     - name: db provision
       tags:
-        - postfix-provision
+        - db-provision
       block:
       - name: Copy postfix-db.sql script
         template:

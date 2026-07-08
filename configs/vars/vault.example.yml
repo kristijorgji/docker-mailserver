@@ -25,3 +25,15 @@ mail_accounts:
 # if you enable the variable below emails targeting myfriend@example.com will go to me@example.com and myfriend receives nothing
 #mail_virtual_aliases:
 #  - { id: 1, domainId: 1, source: "myfriend@example.com", destination: "me@example.com" }
+
+# Inbound blackhole for no-reply addresses (no mailbox needed; use transport discard).
+#mail_virtual_transports:
+#  - { id: 1, domainId: 1, email: "noreply@example.com", transport: discard }
+
+# Optional: relay selected senders/domains via SendGrid (Postfix sender_dependent_relayhost_maps).
+# sendgrid_relay_api_keys:
+#   example_com: "SG.xxxx"
+#   other_com: "SG.yyyy"
+# mail_sender_relays:
+#   - { source: "support@example.com", profile: sendgrid_example }
+#   - { source: "@other.com", profile: sendgrid_other }
