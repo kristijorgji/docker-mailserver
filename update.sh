@@ -1,3 +1,4 @@
 #!/usr/bin/env bash
 
-docker-compose exec ms /bin/bash -c "cd ansible; ansible-playbook playbook.yml --tags='postfix-provision,reload'"
+docker-compose exec -T ms bash -c \
+  "service mysql start && cd ansible && ansible-playbook playbook.yml --tags='db-provision,postfix-provision,reload'"
