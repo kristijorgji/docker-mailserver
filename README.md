@@ -35,13 +35,13 @@ A docker image that will provide an out of the box mailserver using
 - [Docker](https://www.docker.com/) installed
 - [Docker compose](https://docs.docker.com/compose/) installed
 
-**Prerequisites** 
+**Prerequisites**
 
 - Your **mx record** points to the machine where you will use this docker mailserver will run
-  - MX Record Namescheap Example
-- Your *mailserver domain* **A record (or cname)** points to the machine where  this docker mailserver will run.
-  - CNAME Mailserver Domain Record Namescheap Example
-- Your webserver is configured to listen for your *mailserver domain* port 80, so letsencrypt can generate and renew the ssl certificate
+  - ![MX Record Namescheap Example](./docs/mx-record-example.png)
+- Your _mailserver domain_ **A record (or cname)** points to the machine where this docker mailserver will run.
+  - ![CNAME Mailserver Domain Record Namescheap Example](./docs/maildomain-cname-example.png)
+- Your webserver is configured to listen for your _mailserver domain_ port 80, so letsencrypt can generate and renew the ssl certificate
 - You need to expose the ports that you will use through your security group or firewall. Port 465 and 143 must be available, the rest are optional only if you use them
   - 25     # smtp
   - 465    # smtps
@@ -160,15 +160,27 @@ docker-compose exec ms tail /var/log/mail.log
 
 Outbound mail from selected senders can relay through SendGrid using Postfix `sender_dependent_relayhost_maps` (not a global `relayhost`). Multiple SendGrid accounts are supported: each named profile in `configs/vars/vars.yml` references an API key in `sendgrid_relay_api_keys` via `api_key_ref`.
 
-Example in `configs/vars/vault.yml`:
+### Per-domain default and per-mailbox override
+
+`mail_sender_relays` accepts two `source` forms:
+
+| `source` | Meaning |
+| -------- | ------- |
+| `@example.com` | Default relay for **all** mailboxes on that domain |
+| `me@example.com` | Relay for **one** mailbox only |
+
+Postfix looks up the full envelope sender first, then falls back to `@domain`. A mailbox-specific row **wins** over a domain default.
+
+Example — relay every `@example.com` sender via SendGrid, with an optional override for one mailbox:
 
 ```yaml
+# configs/vars/vault.yml
 sendgrid_relay_api_keys:
   example_com: "SG...."
   other_com: "SG...."
 mail_sender_relays:
-  - { source: "support@example.com", profile: sendgrid_example }
-  - { source: "@other.com", profile: sendgrid_other }   # optional per-domain default
+  - { source: "@example.com", profile: sendgrid_example }
+  - { source: "admin@example.com", profile: sendgrid_other }   # optional; wins for admin@ only
 ```
 
 Profiles are defined in `configs/vars/vars.yml`:
@@ -185,18 +197,30 @@ mail_relay_profiles:
     api_key_ref: other_com
 ```
 
-Verify after provision:
-
-```shell
-docker-compose exec ms postmap -q "support@example.com" hash:/etc/postfix/sasl_passwd
-docker-compose exec ms postmap -q "support@example.com" hash:/etc/postfix/sender_dependent_relayhost
-```
+Senders not listed in `mail_sender_relays` (and with no matching `@domain` row) deliver **direct** from the host IP.
 
 After changing relay settings, run:
 
 ```shell
 ./update.sh
 ```
+
+### Verify relay lookup
+
+After `./update.sh`, both lookups below should return `[smtp.sendgrid.net]:587` when `@example.com` uses `sendgrid_example`:
+
+```shell
+docker-compose exec -T ms postmap -q "admin@example.com" hash:/etc/postfix/sender_dependent_relayhost
+docker-compose exec -T ms postmap -q "support@example.com" hash:/etc/postfix/sender_dependent_relayhost
+```
+
+SASL map for the same sender (credentials row present):
+
+```shell
+docker-compose exec -T ms postmap -q "support@example.com" hash:/etc/postfix/sasl_passwd
+```
+
+Empty `postmap -q` output for a mailbox means **no relay** — outbound mail goes direct from the host.
 
 # How to develop locally
 
