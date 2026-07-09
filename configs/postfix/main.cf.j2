@@ -23,7 +23,11 @@ smtpd_tls_cert_file={{ mail_server_cert_path }}
 smtpd_tls_key_file={{ mail_server_key_path }}
 smtpd_use_tls=yes
 smtpd_tls_auth_only = yes
-smtp_tls_security_level = {% if mail_sender_relays is defined and mail_sender_relays | length > 0 %}encrypt{% else %}may{% endif %}
+{% if mail_sender_relays is defined and mail_sender_relays | length > 0 %}
+smtp_tls_security_level = encrypt
+{% else %}
+smtp_tls_security_level = may
+{% endif %}
 smtpd_tls_security_level = may
 smtpd_sasl_security_options = noanonymous, noplaintext
 smtpd_sasl_tls_security_options = noanonymous
