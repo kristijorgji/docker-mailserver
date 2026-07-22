@@ -24,6 +24,14 @@ fi
 
 MAIL_PATH="${MAILSERVER_MAILS_PATH:-./mail}"
 
+if command -v docker-compose >/dev/null 2>&1; then
+  COMPOSE=(docker-compose)
+elif docker compose version >/dev/null 2>&1; then
+  COMPOSE=(docker compose)
+else
+  COMPOSE=()
+fi
+
 echo "This will overwrite ./data/mysql and ${MAIL_PATH} from:"
 echo "  $ARCHIVE"
 if [ "${RESTORE_SKIP_CONFIRM:-}" != "1" ]; then
@@ -34,19 +42,19 @@ if [ "${RESTORE_SKIP_CONFIRM:-}" != "1" ]; then
   fi
 fi
 
-if command -v docker-compose >/dev/null 2>&1; then
-  docker-compose stop ms 2>/dev/null || true
-elif command -v docker >/dev/null 2>&1; then
-  docker compose stop ms 2>/dev/null || true
+if [ "${#COMPOSE[@]}" -gt 0 ]; then
+  "${COMPOSE[@]}" stop ms 2>/dev/null || true
 fi
 
 mkdir -p ./data/mysql "$MAIL_PATH"
 tar -xzf "$ARCHIVE" -C "$ROOT_DIR"
 
-if command -v docker-compose >/dev/null 2>&1; then
-  docker-compose up -d ms
-elif command -v docker >/dev/null 2>&1; then
-  docker compose up -d ms
+# Bind-mounted files may be owned by the extracting host user; fix for container UIDs.
+if [ "${#COMPOSE[@]}" -gt 0 ]; then
+  "${COMPOSE[@]}" run --rm --no-deps --entrypoint bash ms -c \
+    'chown -R mysql:mysql /var/lib/mysql; chown -R vmail:vmail /var/mail' \
+    2>/dev/null || true
+  "${COMPOSE[@]}" up -d ms
 fi
 
 if [ -x ./update.sh ]; then
