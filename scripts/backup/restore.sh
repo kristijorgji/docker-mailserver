@@ -61,7 +61,10 @@ if command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then
 
   if [ "${#COMPOSE[@]}" -gt 0 ]; then
     "${COMPOSE[@]}" run --rm --no-deps --entrypoint bash ms -c \
-      'chown -R mysql:mysql /var/lib/mysql; chown -R vmail:vmail /var/mail'
+      'groupadd -g 5000 vmail 2>/dev/null || true
+       id -u vmail >/dev/null 2>&1 || useradd -s /usr/sbin/nologin -u 5000 -g 5000 vmail
+       chown -R mysql:mysql /var/lib/mysql
+       chown -R vmail:vmail /var/mail'
   fi
 else
   rm -rf ./data/mysql "${MAIL_PATH}"
