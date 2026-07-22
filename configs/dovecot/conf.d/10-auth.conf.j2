@@ -11,15 +11,17 @@
 # See also ssl=required setting.
 disable_plaintext_auth = yes
 
+{% if dovecot_auth_cache_enabled %}
 # Authentication cache size (e.g. 10M). 0 means it's disabled. Note that
 # bsdauth, PAM and vpopmail require cache_key to be set for caching to be used.
-#auth_cache_size = 0
+auth_cache_size = {{ dovecot_auth_cache_size }}
 # Time to live for cached data. After TTL expires the cached record is no
 # longer used, *except* if the main database lookup returns internal failure.
 # We also try to handle password changes automatically: If user's previous
 # authentication was successful, but this one wasn't, the cache isn't used.
 # For now this works only with plaintext authentication.
-#auth_cache_ttl = 1 hour
+auth_cache_ttl = {{ dovecot_auth_cache_ttl }}
+{% endif %}
 # TTL for negative hits (user not found, password mismatch).
 # 0 disables caching them completely.
 #auth_cache_negative_ttl = 1 hour
@@ -121,7 +123,8 @@ auth_mechanisms = plain login
 #!include auth-deny.conf.ext
 #!include auth-master.conf.ext
 
-!include auth-system.conf.ext
+# Virtual-user mailserver: do not load PAM/system passdb (auth-sql.conf.ext only).
+#!include auth-system.conf.ext
 !include auth-sql.conf.ext
 #!include auth-ldap.conf.ext
 #!include auth-passwdfile.conf.ext

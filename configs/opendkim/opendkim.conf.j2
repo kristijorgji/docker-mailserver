@@ -1,0 +1,26 @@
+{{ ansible_managed | comment }}
+
+Syslog                  yes
+SyslogSuccess           yes
+LogWhy                  yes
+
+Canonicalization        relaxed/simple
+Mode                    sv
+SubDomains              no
+
+AutoRestart             yes
+AutoStart               yes
+
+Background              yes
+DNSTimeout              5
+SignatureAlgorithm      rsa-sha256
+
+KeyTable                /etc/opendkim/KeyTable
+SigningTable            /etc/opendkim/SigningTable
+ExternalIgnoreList      /etc/opendkim/TrustedHosts
+InternalHosts           /etc/opendkim/TrustedHosts
+
+Socket                  inet:8891@localhost
+PidFile                 /run/opendkim/opendkim.pid
+UserID                  opendkim:opendkim
+UMask                   007

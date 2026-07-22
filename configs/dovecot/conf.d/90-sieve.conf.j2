@@ -1,0 +1,17 @@
+{{ ansible_managed | comment }}
+{% if enable_rspamd | bool and enable_rspamd_junk_sieve | bool %}
+
+protocol imap {
+  mail_plugins = $mail_plugins imap_sieve sieve
+}
+
+protocol lmtp {
+  mail_plugins = $mail_plugins sieve
+}
+
+plugin {
+  sieve = file:~/sieve
+  sieve_before = /etc/dovecot/sieve/global-spam-to-junk.sieve
+  sieve_pipe_bin_dir = /usr/lib/dovecot/sieve
+}
+{% endif %}

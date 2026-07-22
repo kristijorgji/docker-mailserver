@@ -1,0 +1,40 @@
+---
+
+- name: Create mailserver self-signed ssl cert
+  ansible.builtin.script: "{{ files_path }}/gen-certificate.sh {{ mail_server_hostname }} /etc/letsencrypt/live/{{ mail_server_hostname }}"
+  register: ssl_result
+  failed_when: ssl_result.rc != 0
+  changed_when: "'Created self-signed certificate' in ssl_result.stdout"
+  when: tls_cert_mode | default('internal') == 'self_signed'
+  tags:
+    - certificates
+
+- name: Issue Let's Encrypt certificates inside container
+  ansible.builtin.import_role:
+    name: certbot
+  when: tls_cert_mode | default('internal') == 'internal'
+  tags:
+    - certificates
+
+- name: Verify external TLS certificate files exist
+  ansible.builtin.stat:
+    path: "{{ item }}"
+  register: external_tls_files
+  loop:
+    - "{{ mail_server_cert_path }}"
+    - "{{ mail_server_key_path }}"
+  when: tls_cert_mode | default('internal') == 'external'
+  tags:
+    - certificates
+
+- name: Warn when external TLS certificate files are missing
+  ansible.builtin.debug:
+    msg: >-
+      External TLS mode: mount certificates at {{ mail_server_cert_path }}
+      and {{ mail_server_key_path }}. Certificate lifecycle is managed outside
+      the container; reload postfix/dovecot after host renewal.
+  when:
+    - tls_cert_mode | default('internal') == 'external'
+    - external_tls_files.results | selectattr('stat.exists', 'equalto', false) | list | length > 0
+  tags:
+    - certificates

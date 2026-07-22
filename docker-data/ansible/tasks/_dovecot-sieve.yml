@@ -1,0 +1,12 @@
+---
+
+- name: Compile global spam-to-junk sieve script
+  ansible.builtin.command: sievec /etc/dovecot/sieve/global-spam-to-junk.sieve
+  when:
+    - enable_rspamd | default(false) | bool
+    - enable_rspamd_junk_sieve | default(true) | bool
+  changed_when: true
+  tags:
+    - dovecot-provision
+    - rspamd-provision
+    - reload

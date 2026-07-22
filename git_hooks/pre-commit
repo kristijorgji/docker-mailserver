@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+# Pre-commit hook delegating script
+# Executes all scripts in pre-commit.d/ directory in alphabetical order
+# Stops execution and exits with non-zero status if any hook fails
+
+# Redirect output to stderr
+exec 1>&2
+
+# Get the directory where this script is located
+HOOK_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+HOOKS_DIR="$HOOK_DIR/pre-commit.d"
+
+# Check if pre-commit.d directory exists
+if [ ! -d "$HOOKS_DIR" ]; then
+	echo "ERROR: pre-commit.d directory not found: $HOOKS_DIR"
+	exit 1
+fi
+
+# Execute all executable scripts in pre-commit.d/ in alphabetical order
+for hook in "$HOOKS_DIR"/*; do
+	# Skip if not a file or not executable
+	[ ! -f "$hook" ] && continue
+	[ ! -x "$hook" ] && continue
+
+	# Execute the hook
+	if ! "$hook"; then
+		echo "Pre-commit hook failed: $(basename "$hook")"
+		exit 1
+	fi
+done
+
+exit 0

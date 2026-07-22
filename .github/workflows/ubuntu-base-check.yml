@@ -1,0 +1,29 @@
+# Ubuntu base image digest drift check
+# - Triggers: weekly cron (Monday 06:00 UTC) and workflow_dispatch
+# - Compares pinned ubuntu:22.04@sha256 in Dockerfile with current upstream manifest
+# - Fails when digest differs (bump Dockerfile manually)
+name: Ubuntu base image digest check
+
+on:
+  schedule:
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+jobs:
+  check-digest:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Compare pinned digest with ubuntu:22.04
+        run: |
+          set -euo pipefail
+          pinned=$(grep -E '^FROM ubuntu:22.04@sha256:' Dockerfile | sed 's/.*@//')
+          current=$(docker buildx imagetools inspect ubuntu:22.04 --format '{{ "{{" }}json .Manifest{{ "}}" }}' | python3 -c "import sys,json; print(json.load(sys.stdin)['digest'])")
+          echo "Pinned:  $pinned"
+          echo "Current: $current"
+          if [ "$pinned" != "$current" ]; then
+            echo "::warning::Ubuntu 22.04 base digest has changed. Consider bumping Dockerfile and rebuilding."
+            exit 1
+          fi

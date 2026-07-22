@@ -1,0 +1,11 @@
+{{ ansible_managed | comment }}
+dns {
+  timeout = 1s;
+}
+
+{% if not enable_rspamd_bayes | bool %}
+# Low-RAM profile: disable modules that need Redis when Bayes is off
+neural {
+  enabled = false;
+}
+{% endif %}

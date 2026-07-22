@@ -5,22 +5,23 @@ certbot_admin_email: me@example.com
 mail_server_mailee_hostname: "example.com"
 mail_server_hostname: "mail.example.com"
 
-mysql_root_password: "123456@"
-
-mysql_roundcube_database: "roundcubemail"
-mysql_roundcube_user: "roundcube"
-mysql_roundcube_password: "123456@"
+# MySQL root password (used only for initial server setup inside the container)
+mysql_root_password: "CHANGE_ME_root_password"
 
 mysql_mailserver_database: "mailserver"
-mysql_mailserver_user: "root"
-mysql_mailserver_password: "123456@"
+mysql_mailserver_user: "mailserver"
+mysql_mailserver_password: "CHANGE_ME_mailserver_password"
 
 mail_domains:
   - { id: 1, name: "example.com" }
+  # Optional per-domain overrides (disk quota; outbound limits per hour):
+  # - { id: 1, name: "example.com", mailbox_quota: 10G, outbound_message_limit: 500 }  # 10G disk; 500 msgs/hour
 
 mail_accounts:
-  - { id: 1, name: "me@example.com", password: "123456@" }
-  - { id: 2, name: "myfriend@example.com", password: "123456@" }
+  - { id: 1, name: "me@example.com", password: "CHANGE_ME_account_password" }
+  - { id: 2, name: "myfriend@example.com", password: "CHANGE_ME_account_password", domainId: 1 }
+  # Optional per-account overrides (account quota wins over domain/default; outbound per hour):
+  # - { id: 1, name: "me@example.com", password: "...", quota: 2G, outbound_message_limit: 1000 }  # 2G disk; 1000 msgs/hour
 
 # if you enable the variable below emails targeting myfriend@example.com will go to me@example.com and myfriend receives nothing
 #mail_virtual_aliases:
@@ -34,6 +35,7 @@ mail_accounts:
 # sendgrid_relay_api_keys:
 #   example_com: "SG.xxxx"
 #   other_com: "SG.yyyy"
+mail_sender_relays: []
 # mail_sender_relays:
 #   - { source: "support@example.com", profile: sendgrid_example }
 #   - { source: "@other.com", profile: sendgrid_other }

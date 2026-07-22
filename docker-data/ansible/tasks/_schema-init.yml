@@ -1,0 +1,143 @@
+---
+
+- name: Ensure mysql has started
+  ansible.builtin.service:
+    name: mysql
+    state: started
+  register: mysql_start
+  retries: 5
+  delay: 3
+  until: mysql_start is succeeded
+  tags:
+    - schema-init
+    - db-provision
+
+- name: Wait for MySQL socket
+  ansible.builtin.wait_for:
+    path: /var/run/mysqld/mysqld.sock
+    timeout: 60
+  tags:
+    - schema-init
+    - db-provision
+
+- name: Render MySQL root credentials file
+  ansible.builtin.copy:
+    dest: /root/.my.cnf-root
+    mode: "0600"
+    content: |
+      [client]
+      user=root
+      password={{ mysql_root_password }}
+  tags:
+    - schema-init
+    - db-provision
+
+- name: Render MySQL bootstrap script
+  ansible.builtin.template:
+    src: "{{ templates_path }}/mysql-bootstrap.sql.j2"
+    dest: "{{ rbuild_path }}/mysql-bootstrap.sql"
+  tags:
+    - schema-init
+    - db-provision
+
+- name: Apply MySQL bootstrap with existing root password
+  ansible.builtin.shell: "mysql --defaults-file=/root/.my.cnf-root < {{ rbuild_path }}/mysql-bootstrap.sql"
+  register: mysql_bootstrap_auth
+  failed_when: false
+  changed_when: mysql_bootstrap_auth.rc == 0
+  tags:
+    - schema-init
+    - db-provision
+
+- name: Apply MySQL bootstrap without root password (first boot)
+  ansible.builtin.shell: "mysql --no-defaults -u root < {{ rbuild_path }}/mysql-bootstrap.sql"
+  when: mysql_bootstrap_auth.rc != 0
+  changed_when: true
+  tags:
+    - schema-init
+    - db-provision
+
+- name: Render mailserver MySQL user grant script
+  ansible.builtin.template:
+    src: "{{ templates_path }}/mysql-mailserver-user.sql.j2"
+    dest: "{{ rbuild_path }}/mysql-mailserver-user.sql"
+  tags:
+    - schema-init
+    - db-provision
+
+- name: Create mailserver MySQL database user
+  ansible.builtin.shell: "mysql --defaults-file=/root/.my.cnf-root < {{ rbuild_path }}/mysql-mailserver-user.sql"
+  changed_when: true
+  tags:
+    - schema-init
+    - db-provision
+
+- name: Render MySQL client credentials file
+  ansible.builtin.copy:
+    dest: /root/.my.cnf
+    mode: "0600"
+    content: |
+      [client]
+      user={{ mysql_mailserver_user }}
+      password={{ mysql_mailserver_password }}
+  tags:
+    - schema-init
+    - db-provision
+
+- name: Copy postfix-db.sql schema script
+  ansible.builtin.template:
+    src: "{{ templates_path }}/postfix-db.sql.j2"
+    dest: "{{ rbuild_path }}/postfix-db.sql"
+  tags:
+    - schema-init
+    - db-provision
+
+- name: Apply postfix database schema
+  ansible.builtin.shell: "mysql --defaults-file=/root/.my.cnf < {{ rbuild_path }}/postfix-db.sql"
+  changed_when: true
+  tags:
+    - schema-init
+    - db-provision
+
+- name: Check whether quota_bytes column exists
+  ansible.builtin.shell: >-
+    mysql --defaults-file=/root/.my.cnf -N -e
+    "SELECT COUNT(*) FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA='{{ mysql_mailserver_database }}'
+    AND TABLE_NAME='virtual_users' AND COLUMN_NAME='quota_bytes'"
+  register: quota_col_check
+  changed_when: false
+  tags:
+    - schema-init
+    - db-provision
+
+- name: Add quota_bytes column to virtual_users
+  ansible.builtin.shell: >-
+    mysql --defaults-file=/root/.my.cnf -e
+    "ALTER TABLE {{ mysql_mailserver_database }}.virtual_users
+    ADD COLUMN quota_bytes BIGINT DEFAULT NULL;"
+  when: quota_col_check.stdout | trim == '0'
+  changed_when: true
+  tags:
+    - schema-init
+    - db-provision
+
+- name: Render postfix-db-provision data script
+  ansible.builtin.template:
+    src: "{{ templates_path }}/postfix-db-provision.sql.j2"
+    dest: "{{ rbuild_path }}/postfix-db-provision.sql"
+  tags:
+    - db-provision
+
+- name: Apply postfix mail account data (idempotent upserts)
+  ansible.builtin.shell: "mysql --defaults-file=/root/.my.cnf < {{ rbuild_path }}/postfix-db-provision.sql"
+  changed_when: true
+  tags:
+    - db-provision
+
+- name: Remove rendered provision SQL file
+  ansible.builtin.file:
+    path: "{{ rbuild_path }}/postfix-db-provision.sql"
+    state: absent
+  tags:
+    - db-provision

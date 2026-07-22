@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+# Pre-commit hook to lint staged markdown files using markdownlint-cli2
+# Exits with non-zero status if linting fails
+
+# Redirect output to stderr
+exec 1>&2
+
+# Get the directory where this script is located
+HOOK_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$HOOK_DIR/../.." && pwd)"
+
+# Check for staged markdown files
+STAGED_MD_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.md$' || true)
+
+# If no markdown files are staged, skip linting
+if [ -z "$STAGED_MD_FILES" ]; then
+	exit 0
+fi
+
+# Check if Docker is available
+if ! command -v docker >/dev/null 2>&1; then
+	echo "WARNING: Docker not found. Skipping markdownlint check."
+	echo "Install Docker or run: make lint-markdown"
+	exit 0
+fi
+
+# Run markdownlint-cli2 on staged markdown files
+MD_FILES_ARGS=$(echo "$STAGED_MD_FILES" | tr '\n' ' ')
+
+if ! docker run --rm -v "$REPO_ROOT:/data" -w /data davidanson/markdownlint-cli2:latest $MD_FILES_ARGS; then
+	echo ""
+	echo "Markdown linting failed. Fix the errors above or run:"
+	echo "  make lint-markdown"
+	exit 1
+fi
+
+exit 0

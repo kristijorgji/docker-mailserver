@@ -1,0 +1,3 @@
+UPDATE mysql.user SET plugin='mysql_native_password' WHERE user='root' AND host='localhost';
+ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '{{ mysql_root_password | replace("'", "''") }}';
+FLUSH PRIVILEGES;

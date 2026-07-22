@@ -1,0 +1,23 @@
+---
+
+- name: Ensure postgrey service is started
+  ansible.builtin.service:
+    name: postgrey
+    state: started
+    enabled: true
+  when: enable_postgrey | default(false) | bool
+  tags:
+    - postgrey-provision
+    - postfix-provision
+    - reload
+
+- name: Stop postgrey when disabled
+  ansible.builtin.service:
+    name: postgrey
+    state: stopped
+    enabled: false
+  when: not (enable_postgrey | default(false) | bool)
+  ignore_errors: true
+  tags:
+    - postgrey-provision
+    - reload

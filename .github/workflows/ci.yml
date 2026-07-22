@@ -1,0 +1,111 @@
+# CI workflow for docker-mailserver
+# - Triggers: push and pull_request to main
+# - Jobs: smoke-test (build, update.sh, security checks, backup/restore, idempotency), rspamd-render-test, lint-markdown
+# - Secrets: none
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  smoke-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install swaks
+        run: sudo apt-get update && sudo apt-get install -y swaks
+
+      - name: Prepare test configuration
+        run: |
+          cp tests/fixtures/vault.ci.yml configs/vars/vault.yml
+          mkdir -p data/mysql data/letsencrypt mail
+          chmod +x tests/*.bash update.sh scripts/*.sh scripts/backup/*.sh
+
+      - name: Build image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          load: true
+          tags: docker-mailserver:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Start mailserver
+        run: |
+          docker compose -f docker-compose.yml up -d --build
+          for i in $(seq 1 30); do
+            if docker compose exec -T ms postfix status 2>/dev/null; then
+              break
+            fi
+            sleep 10
+          done
+          ./update.sh
+
+      - name: Run smoke tests
+        run: bash tests/smoke.bash
+
+      - name: Backup and restore round-trip
+        run: bash tests/backup-restore.bash
+
+      - name: Verify update.sh idempotency
+        run: |
+          ./update.sh
+          ./update.sh
+
+      - name: Tear down
+        if: always()
+        run: docker compose down -v
+
+  rspamd-render-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Prepare test configuration
+        run: |
+          cp tests/fixtures/vault.ci.yml configs/vars/vault.yml
+          cp tests/fixtures/vars.rspamd.ci.yml configs/vars/zzz-ci-rspamd.yml
+          mkdir -p data/mysql data/letsencrypt mail
+          chmod +x tests/*.bash update.sh scripts/*.sh scripts/backup/*.sh
+
+      - name: Build image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          load: true
+          tags: docker-mailserver:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Start mailserver
+        run: |
+          docker compose -f docker-compose.yml up -d --build
+          for i in $(seq 1 30); do
+            if docker compose exec -T ms postfix status 2>/dev/null; then
+              break
+            fi
+            sleep 10
+          done
+          ./update.sh
+
+      - name: Run Rspamd render tests
+        run: bash tests/rspamd-render.bash
+
+      - name: Tear down
+        if: always()
+        run: docker compose down -v
+
+  lint-markdown:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Lint markdown
+        run: make lint-markdown

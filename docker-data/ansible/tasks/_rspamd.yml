@@ -1,0 +1,39 @@
+---
+
+- name: Render Rspamd local configuration
+  ansible.builtin.template:
+    src: "{{ user_configs_path }}/rspamd/local.d/{{ item }}"
+    dest: "/etc/rspamd/local.d/{{ item | replace('.j2', '') }}"
+    mode: "0644"
+  loop:
+    - milter.conf.j2
+    - milter_headers.conf.j2
+    - worker-normal.inc.j2
+    - options.inc.j2
+    - statistic.conf.j2
+  when: enable_rspamd | default(false) | bool
+  tags:
+    - rspamd-provision
+    - postfix-provision
+    - reload
+
+- name: Ensure Rspamd service is started
+  ansible.builtin.service:
+    name: rspamd
+    state: started
+    enabled: true
+  when: enable_rspamd | default(false) | bool
+  tags:
+    - rspamd-provision
+    - reload
+
+- name: Stop Rspamd when disabled
+  ansible.builtin.service:
+    name: rspamd
+    state: stopped
+    enabled: false
+  when: not (enable_rspamd | default(false) | bool)
+  ignore_errors: true
+  tags:
+    - rspamd-provision
+    - reload

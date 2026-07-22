@@ -1,0 +1,17 @@
+{{ ansible_managed | comment }}
+{% if enable_mailbox_quotas | bool %}
+
+protocol imap {
+  mail_plugins = $mail_plugins quota imap_quota
+}
+
+protocol lmtp {
+  mail_plugins = $mail_plugins quota
+}
+
+plugin {
+  quota = dict:User quota::proxy::quota
+  quota_warning = storage={{ mailbox_quota_warning_threshold }}%%
+  quota_warning2 = storage={{ mailbox_quota_warning_threshold }}%%
+}
+{% endif %}

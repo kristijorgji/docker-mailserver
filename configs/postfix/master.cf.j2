@@ -11,11 +11,17 @@
 # service type  private unpriv  chroot  wakeup  maxproc command + args
 #               (yes)   (yes)   (yes)    (never) (100)
 # ==========================================================================
-smtp       inet  n       -       n        -       -       smtpd
-#smtp      inet  n       -       -        -       1       postscreen
-#smtpd     pass  -       -       -        -       -       smtpd
-#dnsblog   unix  -       -       -        -       0       dnsblog
-#tlsproxy  unix  -       -       -        -       0       tlsproxy
+smtp       inet  n       -       n        -       1       postscreen
+smtpd     pass  -       -       n        -       -       smtpd
+{% if enable_inbound_rate_limits | bool %}
+  -o anvil_rate_time_unit={{ inbound_anvil_time_unit }}
+  -o smtpd_client_connection_rate_limit={{ inbound_client_connection_rate_limit }}
+  -o smtpd_client_connection_count_limit={{ inbound_client_connection_count_limit }}
+  -o smtpd_client_message_rate_limit={{ inbound_message_rate_limit }}
+  -o smtpd_client_recipient_rate_limit={{ inbound_recipient_rate_limit }}
+{% endif %}
+dnsblog   unix  -       -       -        -       0       dnsblog
+tlsproxy  unix  -       -       -        -       0       tlsproxy
 submission inet  n       -       y        -       -       smtpd
   -o syslog_name=postfix/submission
   -o smtpd_tls_security_level=encrypt
@@ -23,7 +29,14 @@ submission inet  n       -       y        -       -       smtpd
   -o smtpd_sasl_type=dovecot
   -o smtpd_sasl_path=private/auth
   -o smtpd_reject_unlisted_recipient=no
+{% if enable_outbound_rate_limits | bool %}
+  -o anvil_rate_time_unit={{ outbound_anvil_time_unit }}
+  -o smtpd_client_message_rate_limit={{ outbound_message_rate_limit }}
+  -o smtpd_client_recipient_rate_limit={{ outbound_recipient_rate_limit }}
+  -o smtpd_client_restrictions=permit_sasl_authenticated,check_policy_service inet:127.0.0.1:10040,reject
+{% else %}
   -o smtpd_client_restrictions=permit_sasl_authenticated,reject
+{% endif %}
   -o milter_macro_daemon_name=ORIGINATING
 smtps     inet  n       -       -       -       -       smtpd
   -o syslog_name=postfix/smtps
@@ -31,7 +44,14 @@ smtps     inet  n       -       -       -       -       smtpd
   -o smtpd_sasl_auth_enable=yes
   -o smtpd_sasl_type=dovecot
   -o smtpd_sasl_path=private/auth
+{% if enable_outbound_rate_limits | bool %}
+  -o anvil_rate_time_unit={{ outbound_anvil_time_unit }}
+  -o smtpd_client_message_rate_limit={{ outbound_message_rate_limit }}
+  -o smtpd_client_recipient_rate_limit={{ outbound_recipient_rate_limit }}
+  -o smtpd_client_restrictions=permit_sasl_authenticated,check_policy_service inet:127.0.0.1:10040,reject
+{% else %}
   -o smtpd_client_restrictions=permit_sasl_authenticated,reject
+{% endif %}
   -o milter_macro_daemon_name=ORIGINATING
 #628       inet  n       -       y       -       -       qmqpd
 pickup    unix  n       -       y       60      1       pickup

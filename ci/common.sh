@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 
+print_error() {
+  echo "ERROR: $*" >&2
+}
+
 function checkEnvVars() {
   requiredEnv=("$@")
   hasMissingEnv=false

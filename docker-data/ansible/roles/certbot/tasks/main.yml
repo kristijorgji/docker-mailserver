@@ -1,0 +1,28 @@
+---
+
+- name: Ensure certbot renewal deploy hook directory exists
+  ansible.builtin.file:
+    path: /etc/letsencrypt/renewal-hooks/deploy
+    state: directory
+    mode: "0755"
+  tags:
+    - certificates
+
+- name: Install certbot renewal deploy hook
+  ansible.builtin.copy:
+    src: certbot-renewal-deploy.sh
+    dest: /etc/letsencrypt/renewal-hooks/deploy/mailserver.sh
+    mode: "0755"
+  tags:
+    - certificates
+
+- name: Install certbot renewal cron
+  ansible.builtin.copy:
+    dest: /etc/cron.d/certbot-mailserver
+    mode: "0644"
+    content: |
+      0 3 * * * root certbot renew --quiet >> /var/log/certbot-renew.log 2>&1
+  tags:
+    - certificates
+
+- ansible.builtin.import_tasks: letsencrypt-certbot.yml
