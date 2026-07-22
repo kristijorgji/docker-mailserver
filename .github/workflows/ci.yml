@@ -26,6 +26,9 @@ jobs:
           mkdir -p data/mysql data/letsencrypt mail
           chmod +x tests/*.bash update.sh scripts/*.sh scripts/backup/*.sh
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
       - name: Build image
         uses: docker/build-push-action@v6
         with:
@@ -73,6 +76,9 @@ jobs:
           cp tests/fixtures/vars.rspamd.ci.yml configs/vars/zzz-ci-rspamd.yml
           mkdir -p data/mysql data/letsencrypt mail
           chmod +x tests/*.bash update.sh scripts/*.sh scripts/backup/*.sh
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
       - name: Build image
         uses: docker/build-push-action@v6
