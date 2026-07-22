@@ -48,27 +48,28 @@ fi
 
 mkdir -p ./data/mysql "$MAIL_PATH"
 
-# Clear destinations as root when Docker is available (bind mounts are often
-# owned by container UIDs the host user cannot delete).
+ARCHIVE_ABS="$(cd "$(dirname "$ARCHIVE")" && pwd)/$(basename "$ARCHIVE")"
+
+# Bind mounts are often owned by container UIDs. Wipe + extract as root in a
+# helper container, then fix ownership for mysql/vmail inside the ms image.
 if command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then
-  MYSQL_ABS="$(cd ./data/mysql && pwd)"
-  MAIL_ABS="$(cd "$MAIL_PATH" && pwd)"
   docker run --rm \
-    -v "${MYSQL_ABS}:/wipe-mysql" \
-    -v "${MAIL_ABS}:/wipe-mail" \
+    -v "${ROOT_DIR}:/restore" \
+    -v "${ARCHIVE_ABS}:/backup.tar.gz:ro" \
     alpine:3.20 \
-    sh -c 'rm -rf /wipe-mysql/* /wipe-mysql/.[!.]* /wipe-mysql/..?* 2>/dev/null; rm -rf /wipe-mail/* /wipe-mail/.[!.]* /wipe-mail/..?* 2>/dev/null; true'
+    sh -c 'rm -rf /restore/data/mysql /restore/mail && mkdir -p /restore/data /restore/mail && tar -xzf /backup.tar.gz -C /restore'
+
+  if [ "${#COMPOSE[@]}" -gt 0 ]; then
+    "${COMPOSE[@]}" run --rm --no-deps --entrypoint bash ms -c \
+      'chown -R mysql:mysql /var/lib/mysql; chown -R vmail:vmail /var/mail'
+  fi
 else
-  rm -rf ./data/mysql/* "${MAIL_PATH:?}/"* 2>/dev/null || true
+  rm -rf ./data/mysql "${MAIL_PATH}"
+  mkdir -p ./data/mysql "$MAIL_PATH"
+  tar -xzf "$ARCHIVE" -C "$ROOT_DIR"
 fi
 
-tar -xzf "$ARCHIVE" -C "$ROOT_DIR"
-
-# Bind-mounted files may be owned by the extracting host user; fix for container UIDs.
 if [ "${#COMPOSE[@]}" -gt 0 ]; then
-  "${COMPOSE[@]}" run --rm --no-deps --entrypoint bash ms -c \
-    'chown -R mysql:mysql /var/lib/mysql; chown -R vmail:vmail /var/mail' \
-    2>/dev/null || true
   "${COMPOSE[@]}" up -d ms
 fi
 
