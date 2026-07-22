@@ -22,18 +22,7 @@ bash scripts/backup/backup.sh
 ARCHIVE="$(ls -t backups/mailserver-*.tar.gz | head -1)"
 test -f "$ARCHIVE"
 
-echo "==> Stopping container and removing data directories"
-docker compose stop ms
-
-# Container UIDs own these bind mounts; wipe via root helper (host rm fails on CI).
-docker run --rm \
-  -v "${ROOT_DIR}/data/mysql:/wipe-mysql" \
-  -v "${ROOT_DIR}/mail:/wipe-mail" \
-  alpine:3.20 \
-  sh -c 'rm -rf /wipe-mysql/* /wipe-mysql/.[!.]* /wipe-mysql/..?* 2>/dev/null; rm -rf /wipe-mail/* /wipe-mail/.[!.]* /wipe-mail/..?* 2>/dev/null; true'
-mkdir -p ./data/mysql ./mail
-
-echo "==> Restoring from ${ARCHIVE}"
+echo "==> Restoring from ${ARCHIVE} (restore stops ms and replaces data)"
 RESTORE_SKIP_CONFIRM=1 bash scripts/backup/restore.sh "$ARCHIVE"
 
 echo "==> Waiting for Postfix after restore"
