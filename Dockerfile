@@ -1,37 +1,43 @@
-FROM ubuntu:22.04
+FROM ubuntu:22.04@sha256:0e0a0fc6d18feda9db1590da249ac93e8d5abfea8f4c3c0c849ce512b5ef8982
 
 USER root
 
-RUN apt-get update -y
+ENV DEBIAN_FRONTEND=noninteractive
 
-# troubleshooting tools
-RUN apt-get install -y nano lsof telnet
-
-# needed utils for template ninja2 parsing and other tasks
-RUN apt install ansible -y
-
-# install postfix
-RUN apt-get install postfix postfix-mysql -y
-
-# install mysql for storing postfix and dovecot user domains aliases configs
-RUN apt-get install mysql-server -y
-
-# install some tools needed by ansible
-RUN apt install python3-pip -y && python3 -m pip install PyMySQL
-
-# install dovecat and required tools
-RUN apt-get install dovecot-core dovecot-pop3d dovecot-imapd dovecot-mysql dovecot-common dovecot-lmtpd -y
-
-# install letsencrypt and certbot for the ssl certs
-RUN apt-get install certbot -y
-
-# Use syslog-ng to get Postfix logs (rsyslog uses upstart which does not seem
-# to run within Docker).
-RUN apt-get install -q -y syslog-ng
-
-# copy ansible provision codes
-#COPY ./docker-data /docker-data
+RUN apt-get update -y \
+    && apt-get install -y --no-install-recommends \
+        # init / orchestration
+        tini \
+        ansible \
+        python3-pip \
+        # mail stack
+        postfix \
+        postfix-mysql \
+        mysql-server \
+        dovecot-core \
+        dovecot-pop3d \
+        dovecot-imapd \
+        dovecot-mysql \
+        dovecot-common \
+        dovecot-lmtpd \
+        dovecot-sieve \
+        # TLS
+        certbot \
+        # logging
+        syslog-ng \
+        # signing
+        opendkim \
+        opendkim-tools \
+        # optional spam / rate limiting (enabled via vars.yml)
+        rspamd \
+        postgrey \
+        postfwd \
+        # housekeeping
+        cron \
+    && python3 -m pip install --no-cache-dir PyMySQL \
+    && rm -rf /var/lib/apt/lists/*
 
 ADD docker-data /docker-data
 WORKDIR /docker-data
-ENTRYPOINT ["/docker-data/entrypoint.sh"]
+
+ENTRYPOINT ["/usr/bin/tini", "--", "/docker-data/entrypoint.sh"]

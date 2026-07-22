@@ -1,19 +1,28 @@
-version: "3.7"
-
+# Development only — builds image from Dockerfile.
+# Production: use docker-compose.release.yml + MAILSERVER_IMAGE from install.sh.
 services:
   ms:
     build:
       context: .
       dockerfile: ./Dockerfile
     volumes:
-      - ./docker-data:/dev-docker-data
+      - ./docker-data:/dev-docker-data   # dev: live-mount Ansible/entrypoint sources
       - ./configs:/configs
-      - ./mail:/var/mail
+      - ./mail:/var/mail                 # fixed path (no env default in dev)
+      - ./data/mysql:/var/lib/mysql
+      - ./data/letsencrypt:/etc/letsencrypt
     ports:
-      - "25:25"       # smtp
-      - "465:465"     # smtps
-      - "110:110"     # pop3
-      - "143:143"     # imap
-      - "993:993"     # imaps
-      - "995:995"     # pop3s
+      - "25:25"     # smtp
+      - "465:465"   # smtps
+      - "143:143"   # imap
+      - "587:587"   # smtp submission
+      - "993:993"   # imaps
+      - "995:995"   # pop3s
     container_name: ms
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "postfix", "status"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 120s

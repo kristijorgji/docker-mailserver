@@ -6,11 +6,61 @@ mail_server_key_path: "/etc/letsencrypt/live/{{ mail_server_hostname }}/privkey.
 mail_server_chain_cert_path: "/etc/letsencrypt/live/{{ mail_server_hostname }}/fullchain.pem"
 mail_server_user: "vmail"
 mail_server_user_group: "vmail"
-mail_server_user_password: "$6$Kpcw3fR.654O7Xed$Zg05ft1e.XZ.dywhEQhEt8MagOZo1u9YPrgYp8icHHwgrf/9HwxDvjRL6t8BAemCxOBViZ/fdtUQ.D.YfNrsm."
 mail_server_relay_for:
   - "127.0.0.0/8"
   - "[::ffff:127.0.0.0]/104"
   - "[::1]/128"
+
+# TLS: self_signed | internal | external
+# external = host-mounted certs (orchestration layer manages TLS); container does not run certbot
+tls_cert_mode: internal
+
+# Tier-0 spam protection (DNSBL lists; Postscreen always enabled in templates)
+mail_dnsbl_servers:
+  - zen.spamhaus.org
+
+# Optional features (resource impact varies; defaults conservative)
+
+# Spam / filtering (~80–150 MB RAM when Rspamd on; postgrey ~10–30 MB RAM)
+enable_rspamd: false
+enable_postgrey: false
+enable_rspamd_bayes: false
+enable_rspamd_junk_sieve: true  # only when enable_rspamd: true
+
+# Webmail sidecar (~50 MB RAM for SnappyMail container)
+enable_webmail: false
+
+# Dovecot auth cache (~10M RAM, default on)
+dovecot_auth_cache_enabled: true
+dovecot_auth_cache_size: 10M
+dovecot_auth_cache_ttl: 1 hour
+
+# Exposure / lifecycle
+expose_imap_plain: false
+prune_removed_accounts: false
+
+# Abuse protection (Postfix anvil + postfwd outbound; anvil inbound on port 25)
+# Outbound limits use outbound_anvil_time_unit (default 3600s = 1 hour)
+enable_outbound_rate_limits: true
+outbound_anvil_time_unit: 3600s
+outbound_message_rate_limit: 100
+outbound_recipient_rate_limit: 50
+outbound_user_message_limit: 100
+outbound_user_recipient_limit: 50
+
+# Inbound MX flood protection (Postfix anvil on port 25; negligible RAM/CPU, on by default)
+enable_inbound_rate_limits: true
+inbound_anvil_time_unit: 60s
+inbound_client_connection_rate_limit: 30
+inbound_client_connection_count_limit: 10
+inbound_message_rate_limit: 30
+inbound_recipient_rate_limit: 60
+inbound_rate_limit_exceptions: []
+
+# Storage quotas (disk per mailbox; Dovecot plugin — negligible RAM, on by default)
+enable_mailbox_quotas: true
+mailbox_quota_default: 5G  # disk; override per domain (mailbox_quota) or account (quota) in vault.yml
+mailbox_quota_warning_threshold: 90  # server sends warning email at this %; see README (not a Thunderbird popup)
 
 # Outbound smarthost profiles for sender_dependent_relayhost_maps (see vault mail_sender_relays).
 mail_relay_profiles:

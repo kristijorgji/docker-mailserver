@@ -1,0 +1,6 @@
+{{ ansible_managed | comment }}
+{% if enable_rspamd_bayes | bool %}
+# Bayesian classifier enabled via enable_rspamd_bayes
+{% else %}
+enable = false;
+{% endif %}

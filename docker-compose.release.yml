@@ -1,16 +1,23 @@
-version: "3.7"
-
 services:
   ms:
     image: ${MAILSERVER_IMAGE}
     volumes:
       - ./configs:/configs
       - ./${MAILSERVER_MAILS_PATH}:/var/mail
+      - ./data/mysql:/var/lib/mysql
+      - ./data/letsencrypt:/etc/letsencrypt
     ports:
-      - "25:25"       # smtp
-      - "465:465"     # smtps
-      - "110:110"     # pop3
-      - "143:143"     # imap
-      - "993:993"     # imaps
-      - "995:995"     # pop3s
+      - "25:25"     # smtp
+      - "465:465"   # smtps
+      - "143:143"   # imap
+      - "587:587"   # smtp submission
+      - "993:993"   # imaps
+      - "995:995"   # pop3s
     container_name: ms
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "postfix", "status"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 120s

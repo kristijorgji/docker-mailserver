@@ -1,0 +1,4 @@
+{{ ansible_managed | comment }}
+{% for domain in mail_domains %}
+*@{{ domain.name }} mail._domainkey.{{ domain.name }}
+{% endfor %}

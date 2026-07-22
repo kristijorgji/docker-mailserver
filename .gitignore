@@ -16,6 +16,12 @@ Thumbs.db
 # project specific
 ms.env
 configs/vars/vault.yml
+configs/vars/zzz-*.yml
 mail/
+data/
+build/
+backups/
+# Ansible render output (templates in docker-data/ansible/templates/ are source of truth)
+docker-data/ansible/ansible_tmp/*.sql
 # created by using the install script
 docker-mailserver/

@@ -91,7 +91,9 @@ protocols = imap pop3 lmtp
 # "proxy::<name>".
 
 dict {
-  #quota = mysql:/etc/dovecot/dovecot-dict-sql.conf.ext
+{% if enable_mailbox_quotas | bool %}
+  quota = mysql:/etc/dovecot/dovecot-dict-sql.conf.ext
+{% endif %}
   #expire = sqlite:/etc/dovecot/dovecot-dict-sql.conf.ext
 }
 

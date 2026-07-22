@@ -1,0 +1,13 @@
+services:
+  snappymail:
+    image: djmaze/snappymail:latest
+    profiles:
+      - webmail
+    volumes:
+      - ./data/snappymail:/var/lib/snappymail
+    ports:
+      - "8888:8888"
+    depends_on:
+      ms:
+        condition: service_healthy
+    restart: unless-stopped

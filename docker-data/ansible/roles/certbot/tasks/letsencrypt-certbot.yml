@@ -1,0 +1,31 @@
+---
+
+- set_fact:
+    certs_domains:
+      - "{{ mail_server_hostname }}"
+
+- name: Check existing Let's Encrypt certificates
+  ansible.builtin.stat:
+    path: "/etc/letsencrypt/live/{{ item }}"
+  loop: "{{ certs_domains }}"
+  register: certbot_cert_stats
+
+- name: Call certbot to create certificates
+  ansible.builtin.script: >-
+    {{ role_path }}/files/create-letsencrypt-certificates.sh
+    {{ certs_domains | join(' ') }}
+  environment:
+    CERTBOT_ADMIN_EMAIL: "{{ certbot_admin_email }}"
+    PRE_HOOK: "{{ certbot_pre_hook | default('') }}"
+    POST_HOOK: "{{ certbot_post_hook | default('') }}"
+  register: res
+  when: certbot_cert_stats.results | rejectattr('stat.exists') | list | length > 0
+  changed_when: "'Successfully received certificate' in res.stdout"
+  failed_when: res.rc != 0
+
+- name: "certbot result"
+  ansible.builtin.debug:
+    var: res
+  when: res is defined
+  tags:
+    - debug

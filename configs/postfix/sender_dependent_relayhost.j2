@@ -1,5 +1,5 @@
 {{ ansible_managed | comment }}
 {# sender_dependent_relayhost_maps — keys: user@domain or @domain (per-domain relay) #}
-{% for entry in mail_sender_relays | default([]) %}
+{% for entry in mail_sender_relays %}
 {{ entry.source }} {{ mail_relay_profiles[entry.profile].host }}
 {% endfor %}

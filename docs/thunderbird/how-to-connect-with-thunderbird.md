@@ -1,21 +1,37 @@
 # How to connect with Thunderbird
 
-This guide will show you how to connect to your newly created mailserver with Thunderbird.
+This guide shows how to connect Thunderbird to your docker-mailserver instance.
 
-The logic and steps are the same across all clients, but as our favorite is Thunderbird we use that one in this example.
+The same settings apply to most desktop mail clients.
 
-1 Right-click on the left sidebar then choose `Settings`
+## Recommended settings
+
+| Setting         | Value                                 |
+| --------------- | ------------------------------------- |
+| Incoming (IMAP) | **993** with SSL/TLS (IMAPS)          |
+| Outgoing (SMTP) | **587** with STARTTLS (submission)    |
+| Username        | Full email address (`me@example.com`) |
+| Authentication  | Normal password                       |
+
+Plain IMAP on port **143** is disabled by default (`expose_imap_plain: false` in `configs/vars/vars.yml`).
+Enable it only if you need legacy clients on a trusted network.
+
+## Steps
+
+1. Right-click on the left sidebar, then choose **Settings**.
 
 ![open thunderbird settings](./1-open-settings.png)
 
-2 Add the new account, in our example `me@example.com`
-![add the new account](./2-add-new-account.png) 
+1. Add the new account (for example `me@example.com`).
 
-The most important thing here is using port `143`
+![add the new account](./2-add-new-account.png)
 
-3 Finally add outgoing smtp server which will allow you to send emails
+Use **IMAP server** `mail.example.com`, port **993**, connection security **SSL/TLS**.
+
+1. Add the outgoing SMTP server.
 
 ![add outgoing smtp server](./3-add-smtp-server.png)
 
+Use SMTP server `mail.example.com`, port **587**, connection security **STARTTLS**, authentication **Normal password**.
 
-That is all, now Thunderbird will ask for your password and afterward have fun receiving and sending emails!
+That is all. Thunderbird will prompt for the mailbox password from `configs/vars/vault.yml`.

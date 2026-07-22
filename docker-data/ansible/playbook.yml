@@ -17,26 +17,34 @@
               - 'yaml'
               - 'yml'
         - name: "ensure remote build folder exist"
-          file:
+          ansible.builtin.file:
             path: "{{ rbuild_path }}"
             recurse: yes
             state: directory
 
-    - name: Create mailserver self-signed ssl cert
-      script: "{{ files_path }}/gen-certificate.sh {{ mail_server_hostname }} /etc/letsencrypt/live/{{ mail_server_hostname }}"
-      register: ssl_result
-      failed_when: ssl_result.rc < 0
-      changed_when: ssl_result.rc == 0
-      when: env == "local"
+    - name: Fail when example vault passwords are still in use
+      ansible.builtin.fail:
+        msg: "Change default passwords in configs/vars/vault.yml before starting the mailserver."
+      when: >
+        mysql_mailserver_password == '123456@'
+        or mysql_root_password | default('') == '123456@'
+        or mysql_mailserver_password is match('^CHANGE_ME')
+        or mysql_root_password | default('') is match('^CHANGE_ME')
+        or (mail_accounts | selectattr('password', 'equalto', '123456@') | list | length > 0)
+        or (mail_accounts | selectattr('password', 'search', '^CHANGE_ME') | list | length > 0)
       tags:
-        - certificates
-    - import_tasks: tasks/_letsencrypt-certbot.yml
-      when: env != "local"
+        - always
+
+    - name: Set tls_cert_mode from env when not explicitly defined
+      ansible.builtin.set_fact:
+        tls_cert_mode: "{{ 'self_signed' if env == 'local' else (tls_cert_mode | default('internal')) }}"
       tags:
-        - certificates
+        - always
+
+    - import_tasks: tasks/_certificates.yml
 
     - name: "Apply postfix templates"
-      template:
+      ansible.builtin.template:
         src: "{{ item }}"
         dest: "{{ item | replace(user_configs_path + '/postfix','/etc/postfix') | replace('.j2', '') }}"
         mode: "{{ '0600' if item.endswith('sasl_passwd.j2') else omit }}"
@@ -50,62 +58,49 @@
       when: mail_sender_relays is defined and mail_sender_relays | length > 0
       block:
         - name: postmap sender_dependent_relayhost
-          command: postmap /etc/postfix/sender_dependent_relayhost
+          ansible.builtin.command: postmap /etc/postfix/sender_dependent_relayhost
         - name: postmap sasl_passwd
-          command: postmap /etc/postfix/sasl_passwd
+          ansible.builtin.command: postmap /etc/postfix/sasl_passwd
       tags:
         - postfix-provision
         - reload
+
+    - name: Ensure dovecot sieve directory exists
+      ansible.builtin.file:
+        path: /etc/dovecot/sieve
+        state: directory
+        mode: "0755"
+      tags:
+        - dovecot-provision
+        - reload
+
     - name: "Apply dovecot templates"
-      template:
+      ansible.builtin.template:
         src: "{{ item.src }}"
         dest: "{{ item.src | replace(user_configs_path + '/dovecot','/etc/dovecot') | replace('.j2', '') }}"
       with_filetree: "{{ user_configs_path }}/dovecot/"
       when: item.state == 'file'
-
-    - name: Ensure mysql has started
-      shell: 'service mysql start'
       tags:
-        - db-provision
-    - name: Change the authentication plugin of MySQL root user to mysql_native_password
-      shell: mysql -u root -e 'UPDATE mysql.user SET plugin="mysql_native_password" WHERE user="root" AND host="localhost"'
-    - name: Flush Privileges
-      shell: mysql -u root -e 'FLUSH PRIVILEGES'
-    - name: Set MySQL root password
-      mysql_user:
-        login_host: 'localhost'
-        login_user: 'root'
-        login_password: ''
-        name: "{{ mysql_mailserver_user }}"
-        password: "{{ mysql_mailserver_password }}"
-        state: present
+        - dovecot-provision
+        - reload
 
-    - name: db provision
-      tags:
-        - db-provision
-      block:
-      - name: Copy postfix-db.sql script
-        template:
-          src: "{{ templates_path }}/postfix-db.sql.j2"
-          dest: "{{ rbuild_path }}/postfix-db.sql"
-      - name: Create postfix database and table schemas
-        shell: "mysql -u {{ mysql_mailserver_user }} -p{{ mysql_mailserver_password }} < {{ rbuild_path }}/postfix-db.sql"
-      - name: Create db data provision script from template
-        template:
-          src: "{{ templates_path }}/postfix-db-provision.sql.j2"
-          dest: "{{ rbuild_path }}/postfix-db-provision.sql"
-      - name: Provision postfix mail accounts
-        shell: "mysql -u {{ mysql_mailserver_user }} -p{{ mysql_mailserver_password }} < {{ rbuild_path }}/postfix-db-provision.sql"
-      - name: Remove account creds file
-        file:
-          path: "{{ rbuild_path }}/postfix-db-provision.sql"
-          state: absent
+    - import_tasks: tasks/_schema-init.yml
+    - import_tasks: tasks/_opendkim.yml
+    - import_tasks: tasks/_rspamd.yml
+    - import_tasks: tasks/_postgrey.yml
+    - import_tasks: tasks/_postfwd.yml
+    - import_tasks: tasks/_dovecot-sieve.yml
 
     - name: restart postfix
-      service: name=postfix state=restarted
+      ansible.builtin.service:
+        name: postfix
+        state: restarted
       tags:
         - reload
+
     - name: restart dovecot
-      service: name=dovecot state=restarted
+      ansible.builtin.service:
+        name: dovecot
+        state: restarted
       tags:
         - reload

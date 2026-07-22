@@ -1,0 +1,19 @@
+---
+
+certbot_admin_email: ci@example.com
+
+mail_server_mailee_hostname: "example.com"
+mail_server_hostname: "mail.example.com"
+
+mysql_root_password: "ci_root_password"
+mysql_mailserver_database: "mailserver"
+mysql_mailserver_user: "mailserver"
+mysql_mailserver_password: "ci_mailserver_password"
+
+mail_domains:
+  - { id: 1, name: "example.com" }
+
+mail_accounts:
+  - { id: 1, name: "me@example.com", password: "ci_account_password" }
+
+mail_sender_relays: []

@@ -77,6 +77,7 @@ rm "$destdir/Dockerfile"
 rm "$destdir/Makefile"
 rm "$destdir/README.md"
 rm "$destdir/install.sh"
+# Keep CHANGELOG.md for release notes reference
 rm "$destdir/configs/vars/local.yml"
 
 mv "$destdir/configs/vars/vault.example.yml" "$destdir/configs/vars/vault.yml"
@@ -97,6 +98,8 @@ MAILSERVER_IMAGE=kristijorgji/docker-mailserver:$tag
 MAILSERVER_MAILS_PATH=./mail
 EOT
 
+mkdir -p "$destdir/data/mysql" "$destdir/data/letsencrypt" "$destdir/data/snappymail" "$destdir/mail"
+
 __msg="
 Congratulations, installation was successful!
 Before starting the container via docker-compose you need to edit the following files with your configuration variables:
@@ -104,12 +107,22 @@ Before starting the container via docker-compose you need to edit the following 
   $destdir/configs/vars/vault.yml
   $destdir/.env
 
-Afterward do the following:
+Persistent data directories (created automatically):
+  $destdir/data/mysql       — mailserver database
+  $destdir/data/letsencrypt — TLS certificates (internal TLS mode)
+  $destdir/mail             — mailboxes
+
+After editing vault.yml, start the container docker-compose up -d then sync users/domains:
 cd $destdir
-docker-compose up -d
+chmod +x scripts/up.sh scripts/down.sh
+./scripts/up.sh
+./update.sh
 
 That is all, in a couple of minutes the mailserver will be up and running!
 
 You can follow the logs via docker-compose logs -f ms
+
+Release notes: https://github.com/kristijorgji/docker-mailserver/releases
+CHANGELOG (if present): $destdir/CHANGELOG.md
 "
 print_success "$__msg"

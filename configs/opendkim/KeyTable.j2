@@ -1,0 +1,4 @@
+{{ ansible_managed | comment }}
+{% for domain in mail_domains %}
+mail._domainkey.{{ domain.name }} {{ domain.name }}:mail:/etc/opendkim/keys/{{ domain.name }}/mail.private
+{% endfor %}

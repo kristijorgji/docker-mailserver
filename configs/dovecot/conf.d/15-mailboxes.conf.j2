@@ -1,0 +1,10 @@
+{{ ansible_managed | comment }}
+{% if enable_rspamd | bool and enable_rspamd_junk_sieve | bool %}
+
+namespace inbox {
+  mailbox Junk {
+    special_use = \Junk
+    auto = subscribe
+  }
+}
+{% endif %}

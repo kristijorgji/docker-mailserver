@@ -1,0 +1,46 @@
+---
+
+- name: Enable postfwd daemon startup
+  ansible.builtin.lineinfile:
+    path: /etc/default/postfwd
+    regexp: '^STARTUP='
+    line: 'STARTUP=1'
+  when: enable_outbound_rate_limits | default(true) | bool
+  tags:
+    - postfwd-provision
+    - postfix-provision
+    - reload
+
+- name: Ensure postfwd is running
+  ansible.builtin.shell: |
+    if pgrep -f '[p]ostfwd.*postfwd.cf' >/dev/null 2>&1; then
+      exit 0
+    fi
+    service postfwd start
+  args:
+    executable: /bin/bash
+  when: enable_outbound_rate_limits | default(true) | bool
+  changed_when: false
+  tags:
+    - postfwd-provision
+    - reload
+
+- name: Enable postfwd on boot
+  ansible.builtin.service:
+    name: postfwd
+    enabled: true
+  when: enable_outbound_rate_limits | default(true) | bool
+  tags:
+    - postfwd-provision
+    - reload
+
+- name: Stop postfwd when outbound rate limits are disabled
+  ansible.builtin.service:
+    name: postfwd
+    state: stopped
+    enabled: false
+  when: not (enable_outbound_rate_limits | default(true) | bool)
+  ignore_errors: true
+  tags:
+    - postfwd-provision
+    - reload

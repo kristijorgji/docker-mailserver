@@ -1,0 +1,5 @@
+{{ ansible_managed | comment }}
+milter {
+  bind_socket = "inet:11332@localhost";
+  timeout = 120s;
+}

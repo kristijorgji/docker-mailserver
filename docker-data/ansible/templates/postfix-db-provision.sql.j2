@@ -1,47 +1,68 @@
 USE {{ mysql_mailserver_database }};
 
-DELETE FROM virtual_domains;
-INSERT INTO virtual_domains
-  (`id` ,`name`)
+INSERT INTO virtual_domains (`id`, `name`)
 VALUES
 {% for mail_domain in mail_domains %}
-  ({{ mail_domain['id'] }}, '{{ mail_domain['name'] }}'){% if not loop.last %},{% endif %}
+  ({{ mail_domain['id'] }}, '{{ mail_domain['name'] | replace("'", "''") }}'){% if not loop.last %},{% endif %}
 {% endfor %}
-
 ON DUPLICATE KEY UPDATE
-  id = id,
-  name = name;
+  name = VALUES(name);
 
-DELETE FROM virtual_users;
-INSERT INTO virtual_users
-  (`id`, `domain_id`, `password` , `email`)
+INSERT INTO virtual_users (`id`, `domain_id`, `password`, `email`{% if enable_mailbox_quotas | default(true) | bool %}, `quota_bytes`{% endif %})
 VALUES
 {% for mail_account in mail_accounts %}
-  ({{ mail_account['id'] }}, '1', TO_BASE64(UNHEX(SHA2('{{ mail_account['password'] }}', 512))), '{{ mail_account['name'] }}'){% if not loop.last %},{% endif %}
+  {%- set account_domain = mail_account['name'].split('@')[1] -%}
+  {%- set resolved_domain_id = mail_account['domainId'] if mail_account.get('domainId') is not none else (mail_domains | selectattr('name', 'equalto', account_domain) | map(attribute='id') | first) -%}
+  {%- set domain_obj = mail_domains | selectattr('name', 'equalto', account_domain) | first | default(none) -%}
+  {%- set raw_quota = mail_account.get('quota', domain_obj.mailbox_quota if domain_obj else none) | default(mailbox_quota_default, true) -%}
+  {%- if raw_quota is sameas none or raw_quota == 'unlimited' or raw_quota == '0' or raw_quota == 0 -%}
+    {%- set quota_val = none -%}
+  {%- elif raw_quota is string and raw_quota[-1:] | upper == 'G' -%}
+    {%- set quota_val = (raw_quota[:-1] | int) * 1073741824 -%}
+  {%- elif raw_quota is string and raw_quota[-1:] | upper == 'M' -%}
+    {%- set quota_val = (raw_quota[:-1] | int) * 1048576 -%}
+  {%- elif raw_quota is string and raw_quota[-1:] | upper == 'K' -%}
+    {%- set quota_val = (raw_quota[:-1] | int) * 1024 -%}
+  {%- else -%}
+    {%- set quota_val = raw_quota | int -%}
+  {%- endif -%}
+  ({{ mail_account['id'] }}, {{ resolved_domain_id | default(1, true) }}, TO_BASE64(UNHEX(SHA2('{{ mail_account['password'] | replace("'", "''") }}', 512))), '{{ mail_account['name'] | replace("'", "''") }}'{% if enable_mailbox_quotas | default(true) | bool %}, {% if quota_val is none %}NULL{% else %}{{ quota_val }}{% endif %}{% endif %}){% if not loop.last %},{% endif %}
+
 {% endfor %}
-
 ON DUPLICATE KEY UPDATE
-    id = VALUES(id),
-    domain_id = VALUES(domain_id),
-    password = VALUES(password),
-    email = VALUES(email);
+  domain_id = VALUES(domain_id),
+  password = VALUES(password),
+  email = VALUES(email){% if enable_mailbox_quotas | default(true) | bool %},
+  quota_bytes = VALUES(quota_bytes){% endif %};
 
-DELETE FROM virtual_aliases;
-{% if mail_virtual_aliases is defined %}
-INSERT INTO virtual_aliases
-  (`id`, `domain_id`, `source`, `destination`)
+{% if mail_virtual_aliases is defined and mail_virtual_aliases | length > 0 %}
+INSERT INTO virtual_aliases (`id`, `domain_id`, `source`, `destination`)
 VALUES
 {% for mva in mail_virtual_aliases %}
-  ({{ mva['id'] }}, {{ mva['domainId'] }}, '{{ mva['source'] }}', '{{ mva['destination'] }}'){% if not loop.last %},{% endif %}
+  ({{ mva['id'] }}, {{ mva['domainId'] }}, '{{ mva['source'] | replace("'", "''") }}', '{{ mva['destination'] | replace("'", "''") }}'){% if not loop.last %},{% endif %}
 {% endfor %}
-{% endif %};
+ON DUPLICATE KEY UPDATE
+  domain_id = VALUES(domain_id),
+  source = VALUES(source),
+  destination = VALUES(destination);
+{% endif %}
 
-DELETE FROM virtual_transports;
-{% if mail_virtual_transports is defined %}
-INSERT INTO virtual_transports
-  (`id`, `domain_id`, `email` , `transport`)
+{% if mail_virtual_transports is defined and mail_virtual_transports | length > 0 %}
+INSERT INTO virtual_transports (`id`, `domain_id`, `email`, `transport`)
 VALUES
 {% for mvt in mail_virtual_transports %}
-  ({{ mvt['id'] }}, {{ mvt['domainId'] }}, '{{ mvt['email'] }}', '{{ mvt['transport'] }}'){% if not loop.last %},{% endif %}
+  ({{ mvt['id'] }}, {{ mvt['domainId'] }}, '{{ mvt['email'] | replace("'", "''") }}', '{{ mvt['transport'] | replace("'", "''") }}'){% if not loop.last %},{% endif %}
 {% endfor %}
-{% endif %};
+ON DUPLICATE KEY UPDATE
+  domain_id = VALUES(domain_id),
+  email = VALUES(email),
+  transport = VALUES(transport);
+{% endif %}
+
+{% if prune_removed_accounts | default(false) | bool %}
+DELETE FROM virtual_users WHERE email NOT IN (
+{% for mail_account in mail_accounts %}
+  '{{ mail_account['name'] | replace("'", "''") }}'{% if not loop.last %},{% endif %}
+{% endfor %}
+);
+{% endif %}

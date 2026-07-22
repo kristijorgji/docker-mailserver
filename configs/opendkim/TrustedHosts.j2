@@ -1,0 +1,8 @@
+{{ ansible_managed | comment }}
+127.0.0.1
+localhost
+{{ mail_server_hostname }}
+{% for domain in mail_domains %}
+{{ domain.name }}
+*@{{ domain.name }}
+{% endfor %}

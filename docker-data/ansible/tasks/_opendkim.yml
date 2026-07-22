@@ -1,0 +1,75 @@
+---
+
+- name: Ensure OpenDKIM key directory exists
+  ansible.builtin.file:
+    path: "/etc/opendkim/keys/{{ item.name }}"
+    state: directory
+    owner: opendkim
+    group: opendkim
+    mode: "0750"
+  loop: "{{ mail_domains }}"
+  tags:
+    - opendkim-provision
+    - postfix-provision
+    - reload
+
+- name: Generate OpenDKIM keys for domains
+  ansible.builtin.command: >
+    opendkim-genkey -b 2048 -d {{ item.name }} -D /etc/opendkim/keys/{{ item.name }}
+    -s mail -v
+  args:
+    creates: "/etc/opendkim/keys/{{ item.name }}/mail.private"
+  loop: "{{ mail_domains }}"
+  tags:
+    - opendkim-provision
+    - postfix-provision
+    - reload
+
+- name: Set OpenDKIM private key permissions
+  ansible.builtin.file:
+    path: "/etc/opendkim/keys/{{ item.name }}/mail.private"
+    owner: opendkim
+    group: opendkim
+    mode: "0600"
+  loop: "{{ mail_domains }}"
+  tags:
+    - opendkim-provision
+    - postfix-provision
+    - reload
+
+- name: Render OpenDKIM configuration
+  ansible.builtin.template:
+    src: "{{ user_configs_path }}/opendkim/{{ item }}"
+    dest: "/etc/opendkim/{{ item | replace('.j2', '') }}"
+    owner: root
+    group: opendkim
+    mode: "0640"
+  loop:
+    - opendkim.conf.j2
+    - KeyTable.j2
+    - SigningTable.j2
+    - TrustedHosts.j2
+  tags:
+    - opendkim-provision
+    - postfix-provision
+    - reload
+
+- name: Configure OpenDKIM socket for Postfix milter
+  ansible.builtin.lineinfile:
+    path: /etc/default/opendkim
+    regexp: '^#?SOCKET='
+    line: 'SOCKET="inet:8891@localhost"'
+    create: true
+  tags:
+    - opendkim-provision
+    - postfix-provision
+    - reload
+
+- name: Ensure OpenDKIM runs as service
+  ansible.builtin.service:
+    name: opendkim
+    state: started
+    enabled: true
+  tags:
+    - opendkim-provision
+    - reload

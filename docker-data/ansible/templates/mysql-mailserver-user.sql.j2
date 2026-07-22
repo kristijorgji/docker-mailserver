@@ -1,0 +1,3 @@
+CREATE USER IF NOT EXISTS '{{ mysql_mailserver_user }}'@'localhost' IDENTIFIED WITH mysql_native_password BY '{{ mysql_mailserver_password | replace("'", "''") }}';
+GRANT ALL PRIVILEGES ON {{ mysql_mailserver_database }}.* TO '{{ mysql_mailserver_user }}'@'localhost';
+FLUSH PRIVILEGES;

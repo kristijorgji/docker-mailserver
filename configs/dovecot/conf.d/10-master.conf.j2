@@ -18,9 +18,11 @@
 
 service imap-login {
   inet_listener imap {
-    #allow port 143 unsecure just for roundcube, but should block it from aws firewall
+{% if expose_imap_plain | bool %}
     port = 143
-    #port = 0
+{% else %}
+    port = 0
+{% endif %}
   }
   inet_listener imaps {
     port = 993

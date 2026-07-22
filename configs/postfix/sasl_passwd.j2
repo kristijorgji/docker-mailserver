@@ -1,7 +1,7 @@
 {{ ansible_managed | comment }}
 {# https://docs.sendgrid.com/for-developers/sending-email/postfix #}
 {# Sender-dependent SASL: one credential row per mail_sender_relays source (smtp_sender_dependent_authentication). #}
-{% for entry in mail_sender_relays | default([]) %}
+{% for entry in mail_sender_relays %}
 {% set profile = mail_relay_profiles[entry.profile] %}
 {% set api_key = sendgrid_relay_api_keys[profile.api_key_ref] %}
 {{ entry.source }}    {{ profile.sasl_user }}:{{ api_key }}

@@ -1,0 +1,25 @@
+{{ ansible_managed | comment }}
+# Postfwd policy rules for per-SASL-user outbound rate limits.
+# Window: outbound_anvil_time_unit (default 3600s = 1 hour); postfwd rules use /3600.
+# Evaluated top-to-bottom; first match wins.
+
+{% for mail_account in mail_accounts %}
+{% if mail_account.outbound_message_limit is defined %}
+id=ACC_MSG_{{ mail_account.id }} ; sasl_username={{ mail_account.name }} ; action=rate({{ mail_account.name }}, {{ mail_account.outbound_message_limit }}/3600)
+{% endif %}
+{% if mail_account.outbound_recipient_limit is defined %}
+id=ACC_RCPT_{{ mail_account.id }} ; sasl_username={{ mail_account.name }} ; action=rate({{ mail_account.name }}, {{ mail_account.outbound_recipient_limit }}/3600, recipient)
+{% endif %}
+{% endfor %}
+
+{% for mail_domain in mail_domains %}
+{% if mail_domain.outbound_message_limit is defined %}
+id=DOM_MSG_{{ mail_domain.id }} ; sasl_username=~@{{ mail_domain.name | regex_escape() }}$ ; action=rate({{ mail_domain.name }}, {{ mail_domain.outbound_message_limit }}/3600)
+{% endif %}
+{% if mail_domain.outbound_recipient_limit is defined %}
+id=DOM_RCPT_{{ mail_domain.id }} ; sasl_username=~@{{ mail_domain.name | regex_escape() }}$ ; action=rate({{ mail_domain.name }}, {{ mail_domain.outbound_recipient_limit }}/3600, recipient)
+{% endif %}
+{% endfor %}
+
+id=GLOBAL_MSG ; sasl_username=~.+ ; action=rate(sasl_username, {{ outbound_user_message_limit }}/3600)
+id=GLOBAL_RCPT ; sasl_username=~.+ ; action=rate(sasl_username, {{ outbound_user_recipient_limit }}/3600, recipient)
