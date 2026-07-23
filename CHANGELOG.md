@@ -26,6 +26,8 @@ GitHub Release notes for a tag are extracted from the matching section via
 - CI: smoke, open-relay, IMAP auth, rate limits, quotas, upsert, backup/restore, Rspamd render
 - `CHANGELOG.md` and automated GitHub Release notes on `v*` tag publish
 - `docs/repository-layout.md` (configs map, compose dev vs release vs webmail overlay)
+- Multi-arch Docker Hub images (`linux/amd64` + `linux/arm64`) for `v*`,
+  `:edge` / `:sha-*`, and local `:dev-*` pushes
 
 ### Changed
 
@@ -34,6 +36,10 @@ GitHub Release notes for a tag are extracted from the matching section via
 - Idempotent MySQL provisioning via `INSERT ... ON DUPLICATE KEY UPDATE` in `./update.sh`
 - README overhaul: TOC, spam/Junk, TLS modes, backup, quotas, rate limits, pre-release images
 - CI badge switched to GitHub Actions workflow status API
+- Hub multi-arch via shared `.github/actions/docker-hub-build-push`
+  (override locally with `PUSH_PLATFORMS=linux/amd64`)
+- Entrypoint refuses `mysqld --initialize` when `/var/lib/mysql` is non-empty
+  but missing the system schema (avoids wiping a broken/upgrading datadir)
 
 ### Fixed
 

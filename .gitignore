@@ -15,6 +15,7 @@ Thumbs.db
 
 # project specific
 ms.env
+.env
 configs/vars/vault.yml
 configs/vars/zzz-*.yml
 mail/

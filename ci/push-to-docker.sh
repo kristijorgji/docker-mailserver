@@ -12,6 +12,12 @@
 #   sha-<7hex> Immutable commit pin — also pushed by push-edge.yml
 #   dev-<7hex> Local / manual colleague-test builds (this script's default)
 #
+# Platforms (multi-arch manifest by default):
+#   PUSH_PLATFORMS  default linux/amd64,linux/arm64
+#   Override e.g. PUSH_PLATFORMS=linux/amd64 for a faster single-arch push
+# Keep this default in sync with .github/actions/docker-hub-build-push
+# (used by publish.yaml and push-edge.yml).
+#
 # Required env:
 #   IMAGE_NAME           e.g. docker-mailserver
 #   DOCKER_HUB_USERNAME  Docker Hub user/org
@@ -21,7 +27,7 @@
 #   IMAGE_NAME=docker-mailserver \
 #   DOCKER_HUB_USERNAME=kristijorgji \
 #   DOCKER_HUB_AUTH=... \
-#     bash ci/push-to-docker.sh              # pushes :dev-<shortsha>
+#     bash ci/push-to-docker.sh              # pushes :dev-<shortsha> (amd64+arm64)
 #     bash ci/push-to-docker.sh sha-abc1234  # explicit non-release tag
 #
 set -euo pipefail
@@ -53,10 +59,21 @@ if [[ "$tag" =~ ^v[0-9] ]]; then
   exit 1
 fi
 
+PUSH_PLATFORMS="${PUSH_PLATFORMS:-linux/amd64,linux/arm64}"
 rim="${DOCKER_HUB_USERNAME}/${IMAGE_NAME}:${tag}"
 
 echo "Building and pushing Docker image to Hub as ${rim}"
+echo "Platforms: ${PUSH_PLATFORMS}"
 echo "${DOCKER_HUB_AUTH}" | docker login --username "${DOCKER_HUB_USERNAME}" --password-stdin
-docker build -t "$rim" .
-docker push "$rim"
-echo "Pushed ${rim}"
+
+if ! docker buildx inspect >/dev/null 2>&1; then
+  docker buildx create --use --name docker-mailserver-builder >/dev/null
+fi
+
+docker buildx build \
+  --platform "${PUSH_PLATFORMS}" \
+  -t "$rim" \
+  --push \
+  .
+
+echo "Pushed ${rim} (${PUSH_PLATFORMS})"
