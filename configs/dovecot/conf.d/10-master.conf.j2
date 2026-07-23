@@ -128,3 +128,14 @@ service dict {
     #group =
   }
 }
+
+{% if enable_mailbox_quotas | bool %}
+service quota-warning {
+  executable = script /usr/local/bin/quota-warning
+  user = {{ mail_server_user }}
+  unix_listener quota-warning {
+    user = {{ mail_server_user }}
+  }
+}
+{% endif %}
+

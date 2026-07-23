@@ -283,11 +283,11 @@ Exceeding outbound limits returns `452`/`554` on submission. Exceeding inbound l
 
 **Storage quotas** (disk per mailbox; negligible RAM, on by default)
 
-| Variable                          | Default | Description                                                                         |
-|-----------------------------------|---------|-------------------------------------------------------------------------------------|
-| `enable_mailbox_quotas`           | `true`  | Dovecot disk quotas via MySQL                                                       |
-| `mailbox_quota_default`           | `5G`    | Default **disk** limit (override per account/domain in vault)                       |
-| `mailbox_quota_warning_threshold` | `90`    | Reserved for future Dovecot warning script (not applied; bare `%` rules break IMAP) |
+| Variable                          | Default | Description                                                                                          |
+|-----------------------------------|---------|------------------------------------------------------------------------------------------------------|
+| `enable_mailbox_quotas`           | `true`  | Dovecot disk quotas via MySQL                                                                        |
+| `mailbox_quota_default`           | `5G`    | Default **disk** limit (override per account/domain in vault)                                        |
+| `mailbox_quota_warning_threshold` | `90`    | At this % used, Dovecot emails the mailbox user via local Postfix (`quota-warning`)                  |
 
 **`configs/vars/vault.yml`** — `mysql_*` credentials, `mail_domains`, `mail_accounts`, aliases, transports,
 relay API keys.
@@ -299,8 +299,9 @@ relay API keys.
 3. Global `mailbox_quota_default` in `vars.yml`
 
 Use `quota: 0` or `unlimited` on an account to opt out. **Thunderbird** can show used/limit via **IMAP QUOTA**
-(server must advertise it). `mailbox_quota_warning_threshold` is reserved for a future Dovecot
-`quota-warning` script; a bare `storage=N%` rule without a command breaks IMAP after successful auth.
+(server must advertise it). Quota warnings are a **server email to the user** (not a Thunderbird/client popup).
+A bare `storage=N%` Dovecot rule without a `quota-warning` command breaks IMAP after successful auth
+(SnappyMail can show `CAPABILITY Logged in as (null)`).
 
 Optional per-account / per-domain overrides in vault (`outbound_*` limits are **per hour** unless you change `outbound_anvil_time_unit`):
 

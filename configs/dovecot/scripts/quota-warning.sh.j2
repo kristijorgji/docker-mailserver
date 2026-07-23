@@ -1,0 +1,36 @@
+#!/bin/sh
+{{ ansible_managed | comment }}
+# Dovecot quota plugin invokes: quota-warning <percent> <user>
+# Sends a plain-text notice to the mailbox user via local Postfix.
+
+set -eu
+
+PERCENT="${1:-}"
+USER="${2:-}"
+
+if [ -z "$PERCENT" ] || [ -z "$USER" ]; then
+  echo "usage: quota-warning <percent> <user>" >&2
+  exit 1
+fi
+
+DOMAIN="${USER#*@}"
+if [ "$DOMAIN" = "$USER" ] || [ -z "$DOMAIN" ]; then
+  DOMAIN="{{ mail_server_hostname }}"
+fi
+FROM="mailer-daemon@${DOMAIN}"
+
+SUBJECT="Mailbox quota warning: ${PERCENT}% used"
+BODY="Your mailbox ${USER} has reached ${PERCENT}% of its storage quota.
+
+Please delete or archive mail to free space. When the quota is full,
+new inbound messages are rejected (552 5.2.2).
+
+This message was sent automatically by the mail server."
+
+if ! printf 'From: %s\nTo: %s\nSubject: %s\nContent-Type: text/plain; charset=UTF-8\n\n%s\n' \
+  "$FROM" "$USER" "$SUBJECT" "$BODY" | /usr/sbin/sendmail -t -f "$FROM"; then
+  echo "quota-warning: failed to send mail to ${USER}" >&2
+  exit 1
+fi
+
+exit 0
