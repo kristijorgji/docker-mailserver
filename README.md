@@ -356,9 +356,15 @@ enable_webmail: true
 ./scripts/up.sh
 ```
 
-When `enable_webmail: true` in `vars.yml`, `./scripts/up.sh` automatically includes the SnappyMail sidecar.
+When `enable_webmail: true` in `vars.yml`, `./scripts/up.sh` starts the SnappyMail sidecar and seeds
+domain backends to **`ms:993` (IMAPS)** and **`ms:465` (SMTPS)** on the Docker network (see
+[`configs/snappymail/default.json`](configs/snappymail/default.json) and
+[`scripts/seed-snappymail-domains.sh`](scripts/seed-snappymail-domains.sh)). Stock SnappyMail
+`localhost:143` defaults do not work in this layout (`expose_imap_plain` is off).
 
-Open `http://localhost:8888`, complete the SnappyMail admin wizard, and point IMAP to `ms:993` (SSL) on the Docker network.
+Open `http://localhost:8888` (or your reverse-proxied hostname). Log in with the **full email
+address** and mailbox password. Complete the SnappyMail admin wizard only if you need admin settings;
+IMAP/SMTP backends are already provisioned for Docker Compose.
 
 ## Backup and restore
 
