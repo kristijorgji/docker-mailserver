@@ -498,13 +498,24 @@ To let a colleague test on a server without creating a GitHub Release:
 | `sha-<7hex>` | Same workflow (also immutable)                                     | Pin to a specific commit  |
 | `dev-<7hex>` | Local [`ci/push-to-docker.sh`](ci/push-to-docker.sh)               | Manual share before merge |
 
+Hub tags from `publish.yaml`, `push-edge.yml`, and `ci/push-to-docker.sh`
+are **multi-arch** (`linux/amd64` + `linux/arm64`). Clients pull the matching
+architecture automatically.
+
 ```shell
-# Local push (requires Docker Hub credentials in env)
+# Local push (requires Docker Hub credentials in env); multi-arch by default
 IMAGE_NAME=docker-mailserver \
 DOCKER_HUB_USERNAME=kristijorgji \
 DOCKER_HUB_AUTH=... \
   bash ci/push-to-docker.sh
 # → kristijorgji/docker-mailserver:dev-<shortsha>
+
+# Faster single-arch override (e.g. amd64-only for an EC2 smoke test):
+PUSH_PLATFORMS=linux/amd64 \
+IMAGE_NAME=docker-mailserver \
+DOCKER_HUB_USERNAME=kristijorgji \
+DOCKER_HUB_AUTH=... \
+  bash ci/push-to-docker.sh
 ```
 
 Colleague / remote server (release compose + `.env`):
