@@ -155,7 +155,10 @@ and writes `.env` with `MAILSERVER_MAILS_PATH=./mail`. Production installs must 
 `.env` (no YAML default in the release compose file).
 
 [`scripts/up.sh`](../scripts/up.sh) adds `-f docker-compose.webmail.yml --profile webmail` only when
-`enable_webmail: true` in `vars.yml`. Keeping webmail as an overlay avoids unused services in the main
+`enable_webmail: true` in `vars.yml`, then runs
+[`scripts/seed-snappymail-domains.sh`](../scripts/seed-snappymail-domains.sh) so IMAP/SMTP point at
+`ms:993` / `ms:465` ([`configs/snappymail/default.json`](../configs/snappymail/default.json)).
+Keeping webmail as an overlay avoids unused services in the main
 compose files and matches the Compose pattern for optional sidecars.
 
 Developers clone the repo and use root `docker-compose.yml` with `build:` and `/dev-docker-data` so Ansible
