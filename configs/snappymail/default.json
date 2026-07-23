@@ -7,10 +7,6 @@
         "shortLogin": false,
         "lowerLogin": true,
         "sasl": [
-            "SCRAM-SHA3-512",
-            "SCRAM-SHA-512",
-            "SCRAM-SHA-256",
-            "SCRAM-SHA-1",
             "PLAIN",
             "LOGIN"
         ],
@@ -43,10 +39,6 @@
         "shortLogin": false,
         "lowerLogin": true,
         "sasl": [
-            "SCRAM-SHA3-512",
-            "SCRAM-SHA-512",
-            "SCRAM-SHA-256",
-            "SCRAM-SHA-1",
             "PLAIN",
             "LOGIN"
         ],
@@ -70,10 +62,6 @@
         "shortLogin": false,
         "lowerLogin": true,
         "sasl": [
-            "SCRAM-SHA3-512",
-            "SCRAM-SHA-512",
-            "SCRAM-SHA-256",
-            "SCRAM-SHA-1",
             "PLAIN",
             "LOGIN"
         ],
