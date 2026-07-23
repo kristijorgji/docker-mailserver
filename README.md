@@ -283,11 +283,11 @@ Exceeding outbound limits returns `452`/`554` on submission. Exceeding inbound l
 
 **Storage quotas** (disk per mailbox; negligible RAM, on by default)
 
-| Variable                          | Default | Description                                                                 |
-| --------------------------------- | ------- | --------------------------------------------------------------------------- |
-| `enable_mailbox_quotas`           | `true`  | Dovecot disk quotas via MySQL                                               |
-| `mailbox_quota_default`           | `5G`    | Default **disk** limit (override per account/domain in vault)               |
-| `mailbox_quota_warning_threshold` | `90`    | Server sends **warning email** at this % of quota (not a Thunderbird popup) |
+| Variable                          | Default | Description                                                                         |
+|-----------------------------------|---------|-------------------------------------------------------------------------------------|
+| `enable_mailbox_quotas`           | `true`  | Dovecot disk quotas via MySQL                                                       |
+| `mailbox_quota_default`           | `5G`    | Default **disk** limit (override per account/domain in vault)                       |
+| `mailbox_quota_warning_threshold` | `90`    | Reserved for future Dovecot warning script (not applied; bare `%` rules break IMAP) |
 
 **`configs/vars/vault.yml`** — `mysql_*` credentials, `mail_domains`, `mail_accounts`, aliases, transports,
 relay API keys.
@@ -299,8 +299,8 @@ relay API keys.
 3. Global `mailbox_quota_default` in `vars.yml`
 
 Use `quota: 0` or `unlimited` on an account to opt out. **Thunderbird** can show used/limit via **IMAP QUOTA**
-(server must advertise it). `mailbox_quota_warning_threshold` is separate: Dovecot emails the user when usage
-crosses that percentage.
+(server must advertise it). `mailbox_quota_warning_threshold` is reserved for a future Dovecot
+`quota-warning` script; a bare `storage=N%` rule without a command breaks IMAP after successful auth.
 
 Optional per-account / per-domain overrides in vault (`outbound_*` limits are **per hour** unless you change `outbound_anvil_time_unit`):
 
@@ -357,10 +357,11 @@ enable_webmail: true
 ```
 
 When `enable_webmail: true` in `vars.yml`, `./scripts/up.sh` starts the SnappyMail sidecar and seeds
-domain backends to **`ms:993` (IMAPS)** and **`ms:465` (SMTPS)** on the Docker network (see
+domain backends to **`ms:993` (IMAPS)** and **`ms:465` (SMTPS)** with SASL **`PLAIN`/`LOGIN` only**
+(matches Dovecot `auth_mechanisms`; see
 [`configs/snappymail/default.json`](configs/snappymail/default.json) and
 [`scripts/seed-snappymail-domains.sh`](scripts/seed-snappymail-domains.sh)). Stock SnappyMail
-`localhost:143` defaults do not work in this layout (`expose_imap_plain` is off).
+`localhost:143` / SCRAM defaults do not work in this layout (`expose_imap_plain` is off).
 
 Open `http://localhost:8888` (or your reverse-proxied hostname). Log in with the **full email
 address** and mailbox password. Complete the SnappyMail admin wizard only if you need admin settings;
@@ -504,9 +505,26 @@ To let a colleague test on a server without creating a GitHub Release:
 | `sha-<7hex>` | Same workflow (also immutable)                                     | Pin to a specific commit  |
 | `dev-<7hex>` | Local [`ci/push-to-docker.sh`](ci/push-to-docker.sh)               | Manual share before merge |
 
+**Immutable pins:** push a **new** `dev-<shortsha>` for each smoke; do **not** overwrite an existing
+`dev-*` / `sha-*` tag. Orchestration that syncs host configs (e.g. Ansible
+`docker_mailserver_config_ref`) should use the **same** short SHA as the image so Hub image and
+GitHub archive stay paired. Commit and push git first, then:
+
+```shell
+PUSH_PLATFORMS=linux/amd64 \   # or omit for amd64+arm64
+IMAGE_NAME=docker-mailserver \
+DOCKER_HUB_USERNAME=kristijorgji \
+DOCKER_HUB_AUTH=... \
+  bash ci/push-to-docker.sh
+# → kristijorgji/docker-mailserver:dev-<new7hex>
+# Set MAILSERVER_IMAGE / docker_mailserver_image and config_ref to that SHA, then redeploy.
+```
+
 Hub tags from `publish.yaml`, `push-edge.yml`, and `ci/push-to-docker.sh`
-are **multi-arch** (`linux/amd64` + `linux/arm64`). Clients pull the matching
-architecture automatically.
+are **multi-arch** (`linux/amd64` + `linux/arm64`) unless you override `PUSH_PLATFORMS`. Clients pull
+the matching architecture automatically. Local `ci/push-to-docker.sh` creates/uses a
+`docker-container` buildx builder when more than one platform is requested (Desktop’s default
+`docker` driver cannot push multi-arch).
 
 ```shell
 # Local push (requires Docker Hub credentials in env); multi-arch by default
@@ -534,6 +552,19 @@ MAILSERVER_IMAGE=kristijorgji/docker-mailserver:edge
 
 Release tags `vX.Y.Z` are reserved for [`publish.yaml`](.github/workflows/publish.yaml) (image + GitHub Release).
 `ci/push-to-docker.sh` refuses those tags so local pushes cannot look like releases.
+
+**Prune stale non-prod Hub tags** with [`ci/delete-dockerhub-tags.sh`](ci/delete-dockerhub-tags.sh)
+(dry-run by default; matches `dev-*` only; never deletes `v*`). After a new pin is verified:
+
+```shell
+IMAGE_NAME=docker-mailserver \
+DOCKER_HUB_USERNAME=kristijorgji \
+DOCKER_HUB_AUTH=... \
+  bash ci/delete-dockerhub-tags.sh --keep-head-dev          # dry-run
+  bash ci/delete-dockerhub-tags.sh --keep-head-dev --yes    # delete other dev-*
+# Also prune sha-* older than two weeks:
+  bash ci/delete-dockerhub-tags.sh --prefixes dev-,sha- --older-than 14 --yes
+```
 
 **Shortcut:** `make ress` (rebuild + restart), then `./update.sh`.
 
