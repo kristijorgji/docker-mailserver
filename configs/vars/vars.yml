@@ -60,7 +60,8 @@ inbound_rate_limit_exceptions: []
 # Storage quotas (disk per mailbox; Dovecot plugin — negligible RAM, on by default)
 enable_mailbox_quotas: true
 mailbox_quota_default: 5G  # disk; override per domain (mailbox_quota) or account (quota) in vault.yml
-mailbox_quota_warning_threshold: 90  # reserved; bare Dovecot warning rules break IMAP (need a script)
+mailbox_quota_warning_threshold: 90  # % used → email user via local Postfix (quota-warning script)
+
 
 # Outbound smarthost profiles for sender_dependent_relayhost_maps (see vault mail_sender_relays).
 mail_relay_profiles:

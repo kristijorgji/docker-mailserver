@@ -110,6 +110,7 @@ Developers run `bash scripts/dev-init.sh` after clone.
 | [`conf.d/10-ssl.conf.j2`](../configs/dovecot/conf.d/10-ssl.conf.j2)                     | TLS certificate paths (shared with Postfix)              |
 | [`conf.d/15-mailboxes.conf.j2`](../configs/dovecot/conf.d/15-mailboxes.conf.j2)         | Special-use `Junk` mailbox when Rspamd + Sieve enabled   |
 | [`conf.d/90-quota.conf.j2`](../configs/dovecot/conf.d/90-quota.conf.j2)                 | Quota plugin, IMAP QUOTA, warning threshold emails       |
+| [`scripts/quota-warning.sh.j2`](../configs/dovecot/scripts/quota-warning.sh.j2)         | Emails user at storage % via Postfix (`/usr/local/bin`)  |
 | [`conf.d/90-sieve.conf.j2`](../configs/dovecot/conf.d/90-sieve.conf.j2)                 | Global Sieve script path when Rspamd Junk routing on     |
 | [`conf.d/auth-sql.conf.ext.j2`](../configs/dovecot/conf.d/auth-sql.conf.ext.j2)         | SQL passdb/userdb driver include                         |
 | [`conf.d/auth-system.conf.ext.j2`](../configs/dovecot/conf.d/auth-system.conf.ext.j2)   | System/PAM auth (disabled for virtual-user setups)       |

@@ -11,7 +11,8 @@ protocol lmtp {
 
 plugin {
   quota = dict:User quota::proxy::quota
-  {# quota_warning needs an executable (e.g. `quota-warning 90 %u`). A bare
-     `storage=90%%` rule makes IMAP die after auth with PREAUTH/(null). #}
+  # Must include an executable (service quota-warning). A bare storage=N%%
+  # rule makes IMAP die after auth (SnappyMail: CAPABILITY Logged in as (null)).
+  quota_warning = storage={{ mailbox_quota_warning_threshold }}%% quota-warning {{ mailbox_quota_warning_threshold }} %u
 }
 {% endif %}

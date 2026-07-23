@@ -74,6 +74,15 @@
         - dovecot-provision
         - reload
 
+    - name: Ensure dovecot scripts directory exists
+      ansible.builtin.file:
+        path: /etc/dovecot/scripts
+        state: directory
+        mode: "0755"
+      tags:
+        - dovecot-provision
+        - reload
+
     - name: "Apply dovecot templates"
       ansible.builtin.template:
         src: "{{ item.src }}"
@@ -84,7 +93,21 @@
         - dovecot-provision
         - reload
 
+    - name: Install quota-warning helper for Dovecot
+      ansible.builtin.copy:
+        src: /etc/dovecot/scripts/quota-warning.sh
+        dest: /usr/local/bin/quota-warning
+        remote_src: true
+        mode: "0755"
+        owner: root
+        group: root
+      when: enable_mailbox_quotas | default(true) | bool
+      tags:
+        - dovecot-provision
+        - reload
+
     - import_tasks: tasks/_schema-init.yml
+
     - import_tasks: tasks/_opendkim.yml
     - import_tasks: tasks/_rspamd.yml
     - import_tasks: tasks/_postgrey.yml
