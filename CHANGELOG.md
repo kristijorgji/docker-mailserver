@@ -13,6 +13,7 @@ GitHub Release notes for a tag are extracted from the matching section via
 
 - Entrypoint no longer starts Rspamd or postgrey after the playbook has stopped them
 - Ship logrotate in the image, with one syslog-ng config and an hourly cron
+- Restore waits until Postfix is up before `update.sh`
 
 ### Changed
 
