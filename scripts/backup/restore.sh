@@ -74,6 +74,20 @@ fi
 
 if [ "${#COMPOSE[@]}" -gt 0 ]; then
   "${COMPOSE[@]}" up -d ms
+  echo "Waiting for Postfix before update.sh"
+  ready=0
+  for _ in $(seq 1 36); do
+    if "${COMPOSE[@]}" exec -T ms postfix status >/dev/null 2>&1; then
+      ready=1
+      break
+    fi
+    sleep 5
+  done
+  if [ "$ready" -ne 1 ]; then
+    echo "Postfix did not become ready after restore" >&2
+    "${COMPOSE[@]}" logs --tail 80 ms >&2 || true
+    exit 1
+  fi
 fi
 
 if [ -x ./update.sh ]; then
