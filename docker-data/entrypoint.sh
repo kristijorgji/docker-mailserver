@@ -49,11 +49,9 @@ cd -
 service syslog-ng start
 service cron start 2>/dev/null || true
 service opendkim start 2>/dev/null || true
-service rspamd start 2>/dev/null || true
-service postgrey start 2>/dev/null || true
 service postfwd start 2>/dev/null || true
 service postfix start
 service dovecot start
 
 # keep container up and running as we don't start any server
-exec tail -f /var/log/mail.log /var/log/mail.err /var/log/syslog 2>/dev/null || tail -f /var/log/*
+exec tail -F /var/log/mail.log /var/log/mail.err /var/log/syslog 2>/dev/null || tail -F /var/log/*

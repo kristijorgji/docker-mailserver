@@ -22,6 +22,8 @@ echo "==> Checking MySQL mail accounts exist"
 count=$(docker compose exec -T ms bash -c "mysql --defaults-file=/root/.my.cnf -N -e 'SELECT COUNT(*) FROM mailserver.virtual_users'")
 test "$count" -ge 1
 
+bash "$(dirname "$0")/image-fixes.bash"
+
 echo "==> Checking submission port 587 is listening"
 docker compose exec -T ms bash -c 'timeout 2 bash -c "cat < /dev/null > /dev/tcp/127.0.0.1/587"'
 

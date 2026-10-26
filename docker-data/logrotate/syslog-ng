@@ -1,0 +1,26 @@
+/var/log/syslog
+/var/log/mail.log
+/var/log/mail.err
+/var/log/mail.info
+/var/log/mail.warn
+/var/log/daemon.log
+/var/log/kern.log
+/var/log/auth.log
+/var/log/user.log
+/var/log/messages
+/var/log/debug
+/var/log/dovecot.log
+{
+    daily
+    rotate 7
+    compress
+    delaycompress
+    missingok
+    notifempty
+    maxsize 50M
+    sharedscripts
+    postrotate
+        /usr/sbin/syslog-ng-ctl reopen >/dev/null 2>&1 || true
+        doveadm log reopen >/dev/null 2>&1 || true
+    endscript
+}

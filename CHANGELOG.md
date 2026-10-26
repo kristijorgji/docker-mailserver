@@ -7,6 +7,17 @@ This is a single file for the **entire release history** (all versions together)
 GitHub Release notes for a tag are extracted from the matching section via
 [`ci/extract-changelog-section.sh`](ci/extract-changelog-section.sh).
 
+## [0.1.1] - 2026-10-26
+
+### Fixed
+
+- Entrypoint no longer starts Rspamd or postgrey after the playbook has stopped them
+- Ship logrotate in the image, with one syslog-ng config and an hourly cron
+
+### Changed
+
+- MySQL starts with a low-memory config (`performance_schema` off, 64 MB InnoDB buffer pool)
+
 ## [0.1.0] - 2026-07-22
 
 ### Added
@@ -95,3 +106,5 @@ GitHub Release notes for a tag are extracted from the matching section via
 
 - Initial docker-mailserver: Postfix, Dovecot, MySQL, Ansible provisioning
 - `install.sh` one-shot install flow and Docker Hub publish on tag
+
+[0.1.1]: https://github.com/kristijorgji/docker-mailserver/compare/v0.1.0...v0.1.1
