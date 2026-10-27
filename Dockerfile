@@ -13,6 +13,7 @@ RUN apt-get update -y \
         # mail stack
         postfix \
         postfix-mysql \
+        libsasl2-modules \
         mysql-server \
         dovecot-core \
         dovecot-pop3d \

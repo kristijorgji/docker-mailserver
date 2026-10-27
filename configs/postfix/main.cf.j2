@@ -48,11 +48,13 @@ smtpd_milters = inet:localhost:8891
 non_smtpd_milters = inet:localhost:8891
 {% endif %}
 
-# Postscreen DNSBL (Tier 0 spam protection)
+# Postscreen DNSBL (Tier 0 spam protection).
+# Spamhaus answers 127.255.255.254 when the lookup went through a public
+# resolver. That is not a listing. Count only the real ZEN codes.
 postscreen_greet_action = enforce
 postscreen_dnsbl_action = enforce
 postscreen_dnsbl_threshold = 3
-postscreen_dnsbl_sites = {% for dnsbl in mail_dnsbl_servers %}{{ dnsbl }}*3{% if not loop.last %}, {% endif %}{% endfor %}
+postscreen_dnsbl_sites = {% for dnsbl in mail_dnsbl_servers %}{{ dnsbl }}{% if 'spamhaus.org' in dnsbl %}=127.0.0.[2..11]{% endif %}*3{% if not loop.last %}, {% endif %}{% endfor %}
 
 {% if enable_inbound_rate_limits | bool and inbound_rate_limit_exceptions | length > 0 %}
 # Trusted relays bypass inbound anvil limits (port 25)
@@ -69,7 +71,7 @@ smtpd_client_restrictions =
         permit_mynetworks,
         permit_sasl_authenticated,
 {% for dnsbl in mail_dnsbl_servers %}
-        reject_rbl_client {{ dnsbl }},
+        reject_rbl_client {{ dnsbl }}{% if 'spamhaus.org' in dnsbl %}=127.0.0.[2..11]{% endif %},
 {% endfor %}
         permit
 smtpd_recipient_restrictions =

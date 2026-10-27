@@ -33,7 +33,7 @@ submission inet  n       -       y        -       -       smtpd
   -o anvil_rate_time_unit={{ outbound_anvil_time_unit }}
   -o smtpd_client_message_rate_limit={{ outbound_message_rate_limit }}
   -o smtpd_client_recipient_rate_limit={{ outbound_recipient_rate_limit }}
-  -o smtpd_client_restrictions=permit_sasl_authenticated,check_policy_service inet:127.0.0.1:10040,reject
+  -o { smtpd_client_restrictions=permit_sasl_authenticated, check_policy_service inet:127.0.0.1:10040, reject }
 {% else %}
   -o smtpd_client_restrictions=permit_sasl_authenticated,reject
 {% endif %}
@@ -48,7 +48,7 @@ smtps     inet  n       -       -       -       -       smtpd
   -o anvil_rate_time_unit={{ outbound_anvil_time_unit }}
   -o smtpd_client_message_rate_limit={{ outbound_message_rate_limit }}
   -o smtpd_client_recipient_rate_limit={{ outbound_recipient_rate_limit }}
-  -o smtpd_client_restrictions=permit_sasl_authenticated,check_policy_service inet:127.0.0.1:10040,reject
+  -o { smtpd_client_restrictions=permit_sasl_authenticated, check_policy_service inet:127.0.0.1:10040, reject }
 {% else %}
   -o smtpd_client_restrictions=permit_sasl_authenticated,reject
 {% endif %}

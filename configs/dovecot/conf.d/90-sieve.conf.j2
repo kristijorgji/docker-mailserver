@@ -2,7 +2,9 @@
 {% if enable_rspamd | bool and enable_rspamd_junk_sieve | bool %}
 
 protocol imap {
-  mail_plugins = $mail_plugins imap_sieve sieve
+  # The delivery sieve plugin links a symbol that exists only in the LMTP
+  # binary. Loading it here closes IMAP right after login.
+  mail_plugins = $mail_plugins imap_sieve
 }
 
 protocol lmtp {

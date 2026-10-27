@@ -7,6 +7,15 @@ This is a single file for the **entire release history** (all versions together)
 GitHub Release notes for a tag are extracted from the matching section via
 [`ci/extract-changelog-section.sh`](ci/extract-changelog-section.sh).
 
+## [0.1.2] - 2026-10-27
+
+### Fixed
+
+- Install `libsasl2-modules` so outbound SASL (SendGrid) has PLAIN and LOGIN
+- Load the sieve delivery plugin only for LMTP, so IMAP login stays up when the junk sieve is on
+- Keep Postfix `check_policy_service` restrictions as one `master.cf` argument when outbound rate limits are on
+- Count only Spamhaus ZEN codes `127.0.0.2`–`127.0.0.11`, so a public-resolver answer cannot reject mail
+
 ## [0.1.1] - 2026-10-26
 
 ### Fixed
@@ -108,4 +117,5 @@ GitHub Release notes for a tag are extracted from the matching section via
 - Initial docker-mailserver: Postfix, Dovecot, MySQL, Ansible provisioning
 - `install.sh` one-shot install flow and Docker Hub publish on tag
 
+[0.1.2]: https://github.com/kristijorgji/docker-mailserver/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/kristijorgji/docker-mailserver/compare/v0.1.0...v0.1.1
