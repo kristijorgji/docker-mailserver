@@ -2,3 +2,4 @@
 
 enable_rspamd: true
 enable_rspamd_junk_sieve: true
+enable_postgrey: true

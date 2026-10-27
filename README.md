@@ -19,6 +19,7 @@
    - [External mode](#external-mode-host-managed-certificates)
    - [Internal mode](#internal-mode)
 7. [Configuration reference](#configuration-reference)
+   - [Logs and MySQL memory](#logs-and-mysql-memory)
 8. [Ports and mail clients](#ports-and-mail-clients)
 9. [Webmail (optional)](#webmail-optional)
 10. [Backup and restore](#backup-and-restore)
@@ -330,6 +331,16 @@ to free disk space. Check usage: `doveadm quota get -u me@example.com`.
 
 Provisioning is **idempotent**: `./update.sh` upserts users/domains without wiping the database.
 Boot only applies schema and config templates.
+
+### Logs and MySQL memory
+
+`/etc/logrotate.d/syslog-ng` rotates mail, syslog, and Dovecot logs daily (or at 50 MB).
+`/etc/cron.hourly/logrotate` runs that inside the container. Follow logs with `tail -F` so rotation
+does not stall the entrypoint.
+
+MySQL loads `/etc/mysql/mysql.conf.d/zz-mailserver-low-memory.cnf` (`performance_schema` off, 64 MB
+buffer pool). To override a setting, mount a later-sorting file such as
+`/etc/mysql/mysql.conf.d/zz-zz-custom.cnf`.
 
 ## Ports and mail clients
 

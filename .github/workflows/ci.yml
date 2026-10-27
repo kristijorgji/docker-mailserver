@@ -100,7 +100,7 @@ jobs:
           done
           ./update.sh
 
-      - name: Run Rspamd render tests
+      - name: Run enabled rspamd and postgrey tests
         run: bash tests/rspamd-render.bash
 
       - name: Tear down

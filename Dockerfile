@@ -34,10 +34,16 @@ RUN apt-get update -y \
         postfwd \
         # housekeeping
         cron \
+        logrotate \
     && python3 -m pip install --no-cache-dir PyMySQL \
+    && cp /etc/cron.daily/logrotate /etc/cron.hourly/logrotate \
+    && chmod 0755 /etc/cron.hourly/logrotate \
+    && rm -f /etc/logrotate.d/dovecot /etc/logrotate.d/dovecot-core \
     && rm -rf /var/lib/apt/lists/*
 
 ADD docker-data /docker-data
+COPY docker-data/logrotate/syslog-ng /etc/logrotate.d/syslog-ng
+COPY docker-data/mysql/zz-mailserver-low-memory.cnf /etc/mysql/mysql.conf.d/zz-mailserver-low-memory.cnf
 WORKDIR /docker-data
 
 ENTRYPOINT ["/usr/bin/tini", "--", "/docker-data/entrypoint.sh"]
